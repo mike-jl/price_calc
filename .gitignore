@@ -1,4 +1,5 @@
 *_templ.go
+*_templ.txt
 tmp
 *.db
 .DS_Store

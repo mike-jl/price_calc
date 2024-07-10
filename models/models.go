@@ -21,11 +21,12 @@ type BaseProduct struct {
 }
 
 type BaseProductPrice struct {
-	ID        uint `gorm:"primaryKey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Price     float64
-	Quantity  float64
+	ID            uint `gorm:"primaryKey"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	BaseProductID uint
+	Price         float64
+	Quantity      float64
 }
 
 type Product struct {
@@ -33,14 +34,17 @@ type Product struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	Name       string
+	CategoryID uint
 	Category   Category
 	Ingedients []Ingedient
 }
 
 type Ingedient struct {
-	ID          uint `gorm:"primaryKey"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	BaseProduct BaseProduct
-	Quantity    float64
+	ID            uint `gorm:"primaryKey"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	BaseProductID uint
+	BaseProduct   BaseProduct
+	ProductID     uint
+	Quantity      float64
 }

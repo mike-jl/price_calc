@@ -1,51 +1,51 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"context"
+	"log/slog"
+	"os"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-
-	"github.com/a-h/templ"
 	"github.com/labstack/echo/v4"
-	"github.com/mike-jl/price_calc/components"
-	"github.com/mike-jl/price_calc/models"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/mike-jl/price_calc/handlers"
+	"github.com/mike-jl/price_calc/services"
 )
 
-// This custom Render replaces Echo's echo.Context.Render() with templ's templ.Component.Render().
-func Render(ctx echo.Context, statusCode int, t templ.Component) error {
-	buf := templ.GetBuffer()
-	defer templ.ReleaseBuffer(buf)
-
-	if err := t.Render(ctx.Request().Context(), buf); err != nil {
-		return err
-	}
-
-	return ctx.HTML(statusCode, buf.String())
-}
-
 func main() {
-	fmt.Println("hello world")
-
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
-	// Migrate the schema
-	db.AutoMigrate(
-		&models.Category{},
-		&models.BaseProduct{},
-		&models.BaseProductPrice{},
-		&models.Product{},
-		&models.Ingedient{},
-	)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	app := echo.New()
-	app.GET("/", func(c echo.Context) error {
-		return Render(c, http.StatusOK, components.Index())
-	})
+	app.Static("/assets", "assets")
+	app.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogStatus:   true,
+		LogURI:      true,
+		LogError:    true,
+		HandleError: true, // forwards error to the global error handler, so it can decide appropriate status code
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			if v.Error == nil {
+				logger.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
+					slog.String("uri", v.URI),
+					slog.Int("status", v.Status),
+				)
+			} else {
+				logger.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
+					slog.String("uri", v.URI),
+					slog.Int("status", v.Status),
+					slog.String("err", v.Error.Error()),
+				)
+			}
+			return nil
+		},
+	}))
+
+	service, err := services.NewPriceCalcService(logger, "test.db")
+	if err != nil {
+		logger.Error("failed to connect to db")
+		os.Exit(-1)
+	}
+
+	handler := handlers.NewPriceCalcHandler(logger, service)
+	handlers.SetupRoutes(app, handler)
 
 	app.Logger.Fatal(app.Start(":42069"))
 }

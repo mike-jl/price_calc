@@ -1,0 +1,6 @@
+*_templ.go
+tmp
+*.db
+.DS_Store
+node_modules/
+package-lock.json

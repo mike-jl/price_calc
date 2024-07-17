@@ -1,0 +1,22 @@
+{
+    "connections": [
+        {
+            "name": "sqlite3-project",
+            "adapter": "sqlite3"
+        }
+    ],
+    "lint": {
+        "rules": {
+            "align-column-to-the-first": "off",
+            "column-new-line": "error",
+            "linebreak-after-clause-keyword": "error",
+            "reserved-word-case": [
+                "error",
+                "upper"
+            ],
+            "space-surrounding-operators": "error",
+            "where-clause-new-line": "error",
+            "align-where-clause-to-the-first": "error"
+        }
+    }
+}

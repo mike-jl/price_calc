@@ -15,7 +15,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	app := echo.New()
-	app.Static("/assets", "assets")
+	app.Static("/", "assets")
 	app.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
 		LogURI:      true,
@@ -38,9 +38,9 @@ func main() {
 		},
 	}))
 
-	service, err := services.NewPriceCalcService(logger, "test.db")
+	service, err := services.NewPriceCalcService(logger, "test123.db")
 	if err != nil {
-		logger.Error("failed to connect to db")
+		logger.Error(err.Error())
 		os.Exit(-1)
 	}
 

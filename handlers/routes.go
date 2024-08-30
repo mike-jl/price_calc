@@ -13,4 +13,5 @@ func SetupRoutes(e *echo.Echo, ph *PriceCalcHandler) {
 	e.GET("/category/:category-id", ph.getCategory)
 	e.GET("/category/:category-id/edit", ph.getCategoryEdit)
 	e.PUT("/category/:category-id", ph.updateCategory)
+	e.PUT("/product", ph.putProduct)
 }

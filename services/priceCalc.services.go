@@ -94,16 +94,29 @@ func (pc *PriceCalcService) GetIngredientsWithPrice() ([]db.IngredientWithPrice,
 		return nil, err
 	}
 
+	units, err := pc.GetUnits()
+	if err != nil {
+		return nil, err
+	}
+
 	var out []db.IngredientWithPrice
 	for _, ingredientRow := range ingredientsRows {
 		var price *db.IngredientPrice = nil
-		if ingredientRow.ID_2 != nil {
+		if ingredientRow.PriceID != nil {
+			unitIndex := slices.IndexFunc(units, func(unit db.Unit) bool {
+				return unit.ID == *ingredientRow.UnitID
+			})
+			if unitIndex == -1 {
+				return nil, errors.New("unit not found")
+			}
+			unit := units[unitIndex]
+
 			price = &db.IngredientPrice{
-				ID:           *ingredientRow.ID_2,
-				Price:        *ingredientRow.Price,
+				ID:           *ingredientRow.PriceID,
 				TimeStamp:    *ingredientRow.TimeStamp,
 				IngredientID: *ingredientRow.IngredientID,
-				Quantity:     *ingredientRow.Quantity,
+				Price:        *ingredientRow.Price * *ingredientRow.Quantity,
+				Quantity:     *ingredientRow.Quantity * unit.Factor,
 				UnitID:       *ingredientRow.UnitID,
 			}
 		}
@@ -143,12 +156,30 @@ func (pc *PriceCalcService) PutIngredientPrice(
 	unitId int64,
 ) (*db.IngredientPrice, error) {
 	ctx := context.Background()
+
+	units, err := pc.GetUnits()
+	if err != nil {
+		return nil, err
+	}
+
+	i := slices.IndexFunc(units, func(unit db.Unit) bool {
+		return unit.ID == unitId
+	})
+
+	if i == -1 {
+		return nil, errors.New("unit not found")
+	}
+
+	unit := units[i]
+	baseUnitQuantity := quantity / unit.Factor
+	baseUnitPrice := price / baseUnitQuantity
+
 	ingredientPrice, err := pc.queries.PutIngredientPrice(
 		ctx,
 		db.PutIngredientPriceParams{
 			IngredientID: ingredientId,
-			Price:        price,
-			Quantity:     quantity,
+			Price:        baseUnitPrice,
+			Quantity:     baseUnitQuantity,
 			UnitID:       unitId,
 		},
 	)
@@ -204,7 +235,7 @@ func (pc *PriceCalcService) GetProductsWithIngredients() ([]db.ProductWithIngred
 				IngredientPrice: db.IngredientPrice{
 					ID:           *product.ID_4,
 					TimeStamp:    *product.TimeStamp,
-					Price:        *product.Price,
+					Price:        product.Price,
 					Quantity:     *product.Quantity_2,
 					UnitID:       *product.UnitID_2,
 					IngredientID: *product.IngredientID_2,
@@ -227,6 +258,26 @@ func (pc *PriceCalcService) GetProductsWithIngredients() ([]db.ProductWithIngred
 		if ingredient != nil {
 			out[i].IngredientUsageWithPrice = append(out[i].IngredientUsageWithPrice, *ingredient)
 		}
+	}
+	return out, nil
+}
+
+func (pc *PriceCalcService) GetProductsWithPrice() ([]db.ProductWithPrice, error) {
+	ctx := context.Background()
+	products, err := pc.queries.GetProductsWithPrice(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := []db.ProductWithPrice{}
+	for _, product := range products {
+		out = append(out, db.ProductWithPrice{
+			Product: db.Product{
+				ID:         product.ID,
+				Name:       product.Name,
+				CategoryID: product.CategoryID,
+			},
+			Price: product.Price,
+		})
 	}
 	return out, nil
 }
@@ -268,4 +319,16 @@ func (pc *PriceCalcService) GetCategory(id int64) (*db.Category, error) {
 		return nil, err
 	}
 	return &category, err
+}
+
+func (pc *PriceCalcService) PutProduct(name string, categoryId int64) (*db.Product, error) {
+	ctx := context.Background()
+	product, err := pc.queries.PutProduct(
+		ctx,
+		db.PutProductParams{Name: name, CategoryID: categoryId},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
 }

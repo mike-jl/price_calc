@@ -15,3 +15,8 @@ type ProductWithIngredient struct {
 	Product                  Product
 	IngredientUsageWithPrice []IngredientUsageWithPrice
 }
+
+type ProductWithPrice struct {
+	Product Product
+	Price   float64
+}

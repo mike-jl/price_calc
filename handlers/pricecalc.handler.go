@@ -103,14 +103,18 @@ func (ph *PriceCalcHandler) deleteIngredient(c echo.Context) error {
 }
 
 func (ph *PriceCalcHandler) products(c echo.Context) error {
-	products, err := ph.service.GetProductsWithIngredients()
+	products, err := ph.service.GetProductsWithPrice()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get ingredients "+err.Error())
+	}
+	categories, err := ph.service.GetCategories()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get categories "+err.Error())
 	}
 	return render(
 		c,
 		http.StatusOK,
-		components.Index(components.ProductsTable(products, []db.Category{})),
+		components.Index(components.ProductsTable(products, categories)),
 	)
 }
 
@@ -175,4 +179,22 @@ func (ph *PriceCalcHandler) getCategoryEdit(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get category "+err.Error())
 	}
 	return render(c, http.StatusOK, components.CategoryRowEdit(*category))
+}
+
+func (ph *PriceCalcHandler) putProduct(c echo.Context) error {
+	categoryId, err := strconv.ParseInt(c.FormValue("category-id"), 10, 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse category id "+err.Error())
+	}
+	name := c.FormValue("name")
+	product, err := ph.service.PutProduct(name, categoryId)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not insert product "+err.Error())
+	}
+	productWithPrice := db.ProductWithPrice{Product: *product, Price: 0}
+	categories, err := ph.service.GetCategories()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get categories "+err.Error())
+	}
+	return render(c, http.StatusOK, components.ProductRow(productWithPrice, categories))
 }

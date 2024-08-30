@@ -9,9 +9,10 @@ CREATE TABLE categories (
 CREATE TABLE products (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
-    category_id INTEGER,
+    price REAL NOT NULL DEFAULT 0,
+    multipicator REAL NOT NULL DEFAULT 1,
+    category_id INTEGER NOT NULL,
     FOREIGN KEY(category_id) REFERENCES categories(id)
-    ON DELETE SET NULL
     ON UPDATE CASCADE
 );
 
@@ -24,7 +25,7 @@ CREATE TABLE units (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     base_unit_id INTEGER,
-    factor NOT NULL DEFAULT 1
+    factor REAL NOT NULL DEFAULT 1
 );
 
 INSERT INTO units(id, name, base_unit_id, factor)
@@ -33,7 +34,7 @@ values
     (2, "ml", 1, 1000),
     (3, "cl", 1, 100),
     (10, "kg", NULL, 1),
-    (11, "g", 1, 1000)
+    (11, "g", 10, 1000)
 ;
 
 CREATE TABLE ingredient_prices (

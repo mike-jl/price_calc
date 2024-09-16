@@ -1,0 +1,119 @@
+package components
+
+import (
+	"fmt"
+	"github.com/mike-jl/price_calc/db"
+	"strconv"
+)
+
+templ Categories(categories []db.Category) {
+	<section class="hero is-info">
+		<div class="hero-body">
+			<form hx-put="/category" hx-swap="beforeend" hx-target=".section.product-row">
+				<div class="field">
+					<label class="label">New Category</label>
+					<div class="field has-addons">
+						<div class="control">
+							<input class="input" type="text" placeholder="Category Name" name="name"/>
+						</div>
+						<div class="control">
+							<input class="input" type="number" placeholder="VAT" name="vat"/>
+						</div>
+						<div class="control">
+							<button class="button is-success" type="submit">
+								Add
+							</button>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</section>
+	<section class="section product-row">
+		for _, category := range categories {
+			@CategoryRow(category)
+		}
+	</section>
+}
+
+templ CategoryRow(category db.Category) {
+	<div class="block">
+		<div class="columns is-align-items-flex-end">
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Name</label>
+					<div class="control">
+						<input class="input" type="text" value={ category.Name } disabled/>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">VAT</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input"
+								type="text"
+								disabled
+								value={ strconv.FormatInt(category.Vat, 10) }
+							/>
+						</p>
+						<p class="control">
+							<a class="button is-static">%</a>
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<button
+					class="button is-link"
+					hx-get={ fmt.Sprintf("/category/%d/edit", category.ID) }
+					hx-target="closest .block"
+					hx-swap="outerHTML"
+				>Edit</button>
+			</div>
+		</div>
+	</div>
+}
+
+templ CategoryRowEdit(category db.Category) {
+	<div class="block">
+		<div class="columns is-align-items-flex-end">
+			<div class="column">
+				<input
+					class="input"
+					name="name"
+					type="text"
+					form={ fmt.Sprintf("category-%d-form", category.ID) }
+					value={ category.Name }
+				/>
+			</div>
+			<div class="column">
+				<input
+					class="input"
+					name="vat"
+					type="number"
+					form={ fmt.Sprintf("category-%d-form", category.ID) }
+					value={ strconv.FormatInt(category.Vat, 10) }
+				/>
+			</div>
+			<div class="column">
+				<form
+					id={ fmt.Sprintf("category-%d-form", category.ID) }
+					hx-put={ fmt.Sprintf("/category/%d", category.ID) }
+					hx-target="closest .block"
+					hx-swap="outerHTML"
+				>
+					<button
+						class="button is-link"
+						hx-get={ fmt.Sprintf("/category/%d", category.ID) }
+						hx-target="closest .block"
+						hx-swap="outerHTML"
+					>Cancel</button>
+					<button class="button is-link" type="submit">OK</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}

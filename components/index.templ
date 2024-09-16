@@ -1,357 +1,58 @@
 package components
 
-import (
-"fmt"
-"github.com/mike-jl/price_calc/db"
-"github.com/mike-jl/price_calc/services"
-"strconv"
-"time"
-)
+import ()
 
 templ Index(content templ.Component) {
-<!DOCTYPE html>
-<html>
-
-<head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<link rel="stylesheet" href="/bulma/css/bulma.min.css" />
-	<link rel="stylesheet" href="/bulma-responsive-tables/css/main.min.css" />
-	<script src="/htmx.min.js"></script>
-	<script src="/script.js"></script>
-	<title>Price Calculator</title>
-	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-	<link rel="manifest" href="/site.webmanifest" />
-</head>
-
-<body>
-	<nav class="navbar is-info" role="navigation" aria-label="main navigation">
-		<div class="navbar-brand">
-			<a class="navbar-item" href="/">
-				🍕
-			</a>
-			<a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
-				data-target="navbarBasicExample">
-				<span aria-hidden="true"></span>
-				<span aria-hidden="true"></span>
-				<span aria-hidden="true"></span>
-				<span aria-hidden="true"></span>
-			</a>
-		</div>
-		<div id="navbarBasicExample" class="navbar-menu">
-			<div class="navbar-start">
-				<a class="navbar-item" href="/">
-					Ingredients
-				</a>
-				<a class="navbar-item" href="/categories">
-					Categories
-				</a>
-				<a class="navbar-item" href="/products">
-					Products
-				</a>
-			</div>
-		</div>
-	</nav>
-	@content
-</body>
-
-</html>
-}
-
-templ Categories(categories []db.Category) {
-<section class="hero is-info">
-	<div class="hero-body">
-		<form hx-put="/category" hx-swap="none">
-			<div class="field">
-				<label class="label">New Category</label>
-				<div class="field has-addons">
-					<div class="control">
-						<input class="input" type="text" placeholder="Category Name" name="name" />
-					</div>
-					<div class="control">
-						<input class="input" type="number" placeholder="VAT" name="vat" />
-					</div>
-					<div class="control">
-						<button class="button is-success" type="submit">
-							Add
-						</button>
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<link rel="stylesheet" href="/bulma/css/bulma.min.css"/>
+			<link rel="stylesheet" href="/bulma-responsive-tables/css/main.min.css"/>
+			<link rel="stylesheet" href="/style.css"/>
+			<script src="/htmx.min.js"></script>
+			<script src="/script.js"></script>
+			<title>Price Calculator</title>
+			<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+			<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+			<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+			<link rel="manifest" href="/site.webmanifest"/>
+		</head>
+		<body>
+			<nav class="navbar is-info" role="navigation" aria-label="main navigation">
+				<div class="navbar-brand">
+					<a class="navbar-item" href="/">
+						🍕
+					</a>
+					<a
+						role="button"
+						class="navbar-burger"
+						aria-label="menu"
+						aria-expanded="false"
+						data-target="navbarBasicExample"
+					>
+						<span aria-hidden="true"></span>
+						<span aria-hidden="true"></span>
+						<span aria-hidden="true"></span>
+						<span aria-hidden="true"></span>
+					</a>
+				</div>
+				<div id="navbarBasicExample" class="navbar-menu">
+					<div class="navbar-start">
+						<a class="navbar-item" href="/">
+							Ingredients
+						</a>
+						<a class="navbar-item" href="/categories">
+							Categories
+						</a>
+						<a class="navbar-item" href="/products">
+							Products
+						</a>
 					</div>
 				</div>
-			</div>
-		</form>
-	</div>
-</section>
-<section class="section">
-	<table class="table is-fullwidth">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>VAT</th>
-				<th>Edit</th>
-			</tr>
-		</thead>
-		<tbody id="category-table-body">
-			for _, category := range categories {
-			@CategoryRow(category)
-			}
-		</tbody>
-	</table>
-</section>
-}
-
-templ CategoryRow(category db.Category) {
-<tr>
-	<td>{ category.Name }</td>
-	<td>{ strconv.FormatInt(category.Vat, 10) }</td>
-	<td>
-		<button class="button is-link" hx-get={ fmt.Sprintf("/category/%d/edit", category.ID) } hx-target="closest tr"
-			hx-swap="outerHTML">Edit</button>
-	</td>
-</tr>
-}
-
-templ CategoryRowEdit(category db.Category) {
-<tr>
-	<td>
-		<input class="input" name="name" type="text" form={ fmt.Sprintf("category-%d-form", category.ID) } value={
-			category.Name } />
-	</td>
-	<td>
-		<input class="input" name="vat" type="number" form={ fmt.Sprintf("category-%d-form", category.ID) } value={
-			strconv.FormatInt(category.Vat, 10) } />
-	</td>
-	<td>
-		<form id={ fmt.Sprintf("category-%d-form", category.ID) } hx-put={ fmt.Sprintf("/category/%d", category.ID) }
-			hx-target="closest tr" hx-swap="outerHTML">
-			<button class="button is-link" hx-get={ fmt.Sprintf("/category/%d", category.ID) } hx-target="closest tr"
-				hx-swap="outerHTML">Cancel</button>
-			<button class="button is-link" type="submit">OK</button>
-		</form>
-	</td>
-</tr>
-}
-
-templ ProductsTable(products []db.ProductWithPrice, categories []db.Category) {
-<section class="hero is-info">
-	<div class="hero-body">
-		<form hx-put="/product" hx-swap="none">
-			<div class="field">
-				<label class="label">New Product</label>
-				<div class="field has-addons">
-					<div class="control">
-						<input class="input" type="text" placeholder="Ingredient Name" name="name" />
-					</div>
-					<div class="control">
-						<span class="select">
-							<select name="category-id">
-								for _, category := range categories {
-								<option value={ strconv.FormatInt(category.ID, 10) }>{ category.Name }</option>
-								}
-								<option selected hidden disabled>Select Category</option>
-							</select>
-						</span>
-					</div>
-					<div class="control">
-						<button class="button is-success" type="submit">
-							Add
-						</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
-</section>
-<section class="section">
-	<table class="table is-fullwidth">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Category</th>
-				<th>Cost</th>
-				<th>Edit</th>
-			</tr>
-		</thead>
-		<tbody id="product-table-body">
-			for _, product := range products {
-			@ProductRow(product, categories)
-			}
-		</tbody>
-	</table>
-</section>
-}
-
-templ ProductRow(product db.ProductWithPrice, categories []db.Category) {
-<tr>
-	<td>{ product.Product.Name }</td>
-	<td>
-		for _, category := range categories {
-		if category.ID == product.Product.CategoryID {
-		{ category.Name }
-		}
-		}
-	</td>
-	<td>
-		{ fmt.Sprintf("%.2f", product.Price) }
-	</td>
-	<td>
-		<div id={ fmt.Sprintf("product-modal-%d", product.Product.ID) } class="modal">
-			<div class="modal-background"></div>
-			<div class="modal-content">
-				<div class="box"></div>
-			</div>
-			<button class="modal-close is-large" aria-label="close"></button>
-		</div>
-		<button class="button is-link js-modal-trigger" data-target={ fmt.Sprintf("product-modal-%d",
-			product.Product.ID) }>
-			Edit
-		</button>
-	</td>
-</tr>
-}
-
-templ IngredientsTable(ingredients []db.IngredientWithPrice, units services.UnitsMap) {
-<section class="hero is-info">
-	<div class="hero-body">
-		<form hx-put="/ingredient" hx-swap="none">
-			<div class="field">
-				<label class="label">New Ingredient</label>
-				<div class="field has-addons">
-					<div class="control">
-						<input class="input" type="text" placeholder="Ingredient Name" name="name" />
-					</div>
-					<div class="control">
-						<button class="button is-success" type="submit">
-							Add
-						</button>
-					</div>
-				</div>
-			</div>
-		</form>
-	</div>
-</section>
-<section class="section">
-	<table class="table is-fullwidth">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Current Price</th>
-				<th>Edit Price</th>
-				<th>Delete Ingredient</th>
-			</tr>
-		</thead>
-		<tbody id="ingredient-table-body">
-			for _, ingredient := range ingredients {
-			@Ingredient(ingredient, units)
-			}
-		</tbody>
-	</table>
-</section>
-}
-
-templ Ingredient(ingredient db.IngredientWithPrice, units services.UnitsMap) {
-<tr>
-	<td>{ ingredient.Ingredient.Name }</td>
-	<td id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) } if len(ingredient.Prices)==0 {
-		class="is-warning" }>
-		if len(ingredient.Prices) >= 1 {
-		{ fmt.Sprintf("%.2f €", ingredient.Prices[0].Price) } /
-		{ fmt.Sprintf("%.2f %s", ingredient.Prices[0].Quantity, units[ingredient.Prices[0].UnitID].Name) }
-		} else {
-		N/A
-		}
-	</td>
-	<td>
-		<div id={ fmt.Sprintf("ingredient-modal-%d", ingredient.Ingredient.ID) } class="modal">
-			<div class="modal-background"></div>
-			<div class="modal-content">
-				<div class="box">
-					<form hx-put={ fmt.Sprintf("/ingredient-price/%d", ingredient.Ingredient.ID) } hx-swap="none">
-						<div class="field has-addons">
-							<p class="control">
-								<input class="input" type="number" step="any" name="price" placeholder="New Price" />
-							</p>
-							<p class="control">
-								<input class="input" type="number" step="any" name="quantity" placeholder="Quantity" />
-							</p>
-							<p class="control">
-								<span class="select">
-									<select name="unit">
-										for _, unit := range units {
-										<option value={ strconv.FormatInt(unit.ID, 10) } selected?={
-											len(ingredient.Prices)> 0 && ingredient.Prices[0].UnitID == unit.ID }
-											>{ unit.Name }</option>
-										}
-										if len(ingredient.Prices) == 0 {
-										<option selected hidden disabled></option>
-										}
-									</select>
-								</span>
-							</p>
-							<p class="control">
-								<button class="button" type="submit">
-									Insert
-								</button>
-							</p>
-						</div>
-					</form>
-					<table class="table is-fullwidth">
-						<thead>
-							<tr>
-								<th>Price</th>
-								<th>Unit</th>
-								<th>Date</th>
-							</tr>
-						</thead>
-						<tbody id={ fmt.Sprintf("ingredient-price-table-body-%d", ingredient.Ingredient.ID) }>
-							for _, price := range ingredient.Prices {
-							<tr>
-								<td>{ fmt.Sprintf("%.2f €", price.Price) }</td>
-								<td>{ fmt.Sprintf("%.2f %s", price.Quantity, units[price.UnitID].Name) }</td>
-								<td>{ time.Unix(price.TimeStamp, 0).Format("2006-01-02 15:04:05") }</td>
-							</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-			</div>
-			<button class="modal-close is-large" aria-label="close"></button>
-		</div>
-		<button class="button is-link js-modal-trigger" data-target={ fmt.Sprintf("ingredient-modal-%d",
-			ingredient.Ingredient.ID) }>
-			Edit
-		</button>
-	</td>
-	<td>
-		<button class="button is-danger" hx-delete={ fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID) }
-			hx-target="closest tr">Delete</button>
-	</td>
-</tr>
-}
-
-templ IngredientPriceOob(price db.IngredientPrice, units services.UnitsMap) {
-<template>
-	<td hx-swap-oob="outerHTML" id={ fmt.Sprintf("ingredient-%d-price", price.IngredientID) }>
-		{ fmt.Sprintf("%.2f €", price.Price) } /
-		{ fmt.Sprintf("%.2f %s", price.Quantity, units[price.UnitID].Name) }
-	</td>
-</template>
-<template>
-	<tbody hx-swap-oob="afterbegin" id={ fmt.Sprintf("ingredient-price-table-body-%d", price.IngredientID) }>
-		<tr>
-			<td>{ fmt.Sprintf("%.2f €", price.Price) }</td>
-			<td>{ fmt.Sprintf("%.2f %s", price.Quantity, units[price.UnitID].Name) }</td>
-			<td>{ time.Unix(price.TimeStamp, 0).Format("2006-01-02 15:04:05") }</td>
-		</tr>
-	</tbody>
-</template>
-}
-
-templ IngredientOob(ingredient db.IngredientWithPrice, units services.UnitsMap) {
-<template>
-	<tbody id="ingredient-table-body" hx-swap-oob="afterbegin">
-		@Ingredient(ingredient, units)
-	</tbody>
-</template>
+			</nav>
+			@content
+		</body>
+	</html>
 }

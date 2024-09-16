@@ -10,7 +10,7 @@ CREATE TABLE products (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     price REAL NOT NULL DEFAULT 0,
-    multipicator REAL NOT NULL DEFAULT 1,
+    multiplicator REAL NOT NULL DEFAULT 1,
     category_id INTEGER NOT NULL,
     FOREIGN KEY(category_id) REFERENCES categories(id)
     ON UPDATE CASCADE
@@ -40,14 +40,17 @@ values
 CREATE TABLE ingredient_prices (
     id INTEGER PRIMARY KEY,
     time_stamp INTEGER NOT NULL DEFAULT ( unixepoch('now') ),
-    price REAL NOT NULL,
+    price REAL,
     quantity REAL NOT NULL,
     unit_id INTEGER NOT NULL,
     ingredient_id INTEGER NOT NULL,
+    base_product_id INTEGER,
     FOREIGN KEY(ingredient_id) REFERENCES ingredients(id)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
-    FOREIGN KEY(unit_id) REFERENCES units(id)
+    FOREIGN KEY(unit_id) REFERENCES units(id),
+    FOREIGN KEY(base_product_id) REFERENCES products(id),
+    check (price is not null != base_product_id is null)
 );
 
 CREATE TABLE ingredient_usage (

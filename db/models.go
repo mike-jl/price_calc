@@ -16,12 +16,13 @@ type Ingredient struct {
 }
 
 type IngredientPrice struct {
-	ID           int64
-	TimeStamp    int64
-	Price        float64
-	Quantity     float64
-	UnitID       int64
-	IngredientID int64
+	ID            int64
+	TimeStamp     int64
+	Price         *float64
+	Quantity      float64
+	UnitID        int64
+	IngredientID  int64
+	BaseProductID *int64
 }
 
 type IngredientUsage struct {
@@ -33,11 +34,11 @@ type IngredientUsage struct {
 }
 
 type Product struct {
-	ID           int64
-	Name         string
-	Price        float64
-	Multipicator float64
-	CategoryID   int64
+	ID            int64
+	Name          string
+	Price         float64
+	Multiplicator float64
+	CategoryID    int64
 }
 
 type Unit struct {

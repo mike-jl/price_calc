@@ -1,0 +1,7 @@
+.product-row>.block:first-child label.is-hidden-tablet.product-label {
+    display: block !important;
+}
+
+.modal {
+    --bulma-modal-content-width: 60rem;
+}

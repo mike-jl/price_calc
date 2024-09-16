@@ -1,6 +1,6 @@
 package db
 
-type IngredientWithPrice struct {
+type IngredientWithPrices struct {
 	Ingredient Ingredient
 	Prices     []IngredientPrice
 }
@@ -16,7 +16,7 @@ type ProductWithIngredient struct {
 	IngredientUsageWithPrice []IngredientUsageWithPrice
 }
 
-type ProductWithPrice struct {
+type ProductWithCost struct {
 	Product Product
-	Price   float64
+	Cost    float64
 }

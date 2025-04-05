@@ -53,9 +53,12 @@ function refreshIngredientCost(e) {
     try {
         let factor = unit.options[unit.selectedIndex].getAttribute('data-factor')
         let baseCost = ingredient.options[ingredient.selectedIndex].getAttribute('data-price')
+        if (!factor || !baseCost) {
+            cost.value = 0.0
+            return
+        }
         newCost = (amount.value / factor) * baseCost
     } catch (error) {
-
     }
     cost.value = ((Math.round(newCost * 100) / 100).toFixed(2))
 }
@@ -90,7 +93,7 @@ function getUnitIdFromSelect(productId) {
     if (selected) {
         return unitId = selected.getAttribute('data-unit-id')
     }
-    return -1
+    return 0
 }
 
 document.addEventListener('DOMContentLoaded', () => {

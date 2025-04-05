@@ -6,6 +6,7 @@ func SetupRoutes(e *echo.Echo, ph *PriceCalcHandler) {
 	e.GET("/", ph.index)
 	e.PUT("/ingredient", ph.putIngredient)
 	e.PUT("/ingredient-price/:ingredient-id", ph.putIngredientPrice)
+	e.GET("/ingredient/:ingredient-id/edit", ph.getIngredientEdit)
 	e.DELETE("/ingredient/:ingredient-id", ph.deleteIngredient)
 	e.GET("/categories", ph.categories)
 	e.GET("/products", ph.products)

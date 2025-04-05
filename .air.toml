@@ -5,7 +5,9 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "templ generate && sqlc generate && go build -o ./tmp/main ."
+  # full_bin = "dlv exec ./tmp/main --headless --listen=:2345 --api-version=2 --accept-multiclient"
+  cmd = "templ generate && sqlc generate && go build -gcflags=\"all=-N -l\" -o ./tmp/main ."
+  # cmd = "templ generate && sqlc generate && go build -gcflags=\"all=-N -l\" -o ./tmp/main ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []

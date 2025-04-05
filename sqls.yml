@@ -1,0 +1,5 @@
+lowercaseKeywords: true
+connections:
+  - alias: default
+    driver: sqlite3
+    dataSourceName: file:db.sqlite3

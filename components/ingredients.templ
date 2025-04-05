@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"github.com/mike-jl/price_calc/db"
 	"github.com/mike-jl/price_calc/services"
-	"strconv"
 	"time"
 )
 
 templ IngredientsTable(ingredients []db.IngredientWithPrices, units services.UnitsMap) {
 	<section class="hero is-info">
-		<div class="hero-body">
-			<form hx-put="/ingredient" hx-swap="afterbegin" hx-target="#ingredient-table-body">
+		<form hx-put="/ingredient" hx-swap="afterbegin" hx-target="#ingredient-table-body">
+			<div class="hero-body">
 				<div class="field">
 					<label class="label">New Ingredient</label>
 					<div class="field has-addons">
@@ -25,118 +24,196 @@ templ IngredientsTable(ingredients []db.IngredientWithPrices, units services.Uni
 						</div>
 					</div>
 				</div>
-			</form>
-		</div>
+			</div>
+		</form>
 	</section>
-	<section class="section">
-		<table class="table is-fullwidth">
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Current Price</th>
-					<th>Edit Price</th>
-					<th>Delete Ingredient</th>
-				</tr>
-			</thead>
-			<tbody id="ingredient-table-body" hx-on::after-settle="refreshModalHandler()">
-				for _, ingredient := range ingredients {
-					@Ingredient(ingredient, units)
-				}
-			</tbody>
-		</table>
+	<section class="section product-row" id="ingredient-table-body">
+		for _, ingredient := range ingredients {
+			@IngredientRow(ingredient, units)
+		}
 	</section>
 }
 
-templ Ingredient(ingredient db.IngredientWithPrices, units services.UnitsMap) {
-	<tr>
-		<td>{ ingredient.Ingredient.Name }</td>
-		<td
-			id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) }
-			if len(ingredient.Prices)==0 {
-				class="is-warning"
-			}
-		>
-			if len(ingredient.Prices) >= 1 {
-				{ fmt.Sprintf("%.2f €", *ingredient.Prices[0].Price) } /
-				{ fmt.Sprintf("%.2f %s", ingredient.Prices[0].Quantity, units[ingredient.Prices[0].UnitID].Name) }
-			} else {
-				N/A
-			}
-		</td>
-		<td>
-			<div id={ fmt.Sprintf("ingredient-modal-%d", ingredient.Ingredient.ID) } class="modal">
-				<div class="modal-background"></div>
-				<div class="modal-content">
-					<div class="box">
-						<form hx-put={ fmt.Sprintf("/ingredient-price/%d", ingredient.Ingredient.ID) } hx-swap="none">
-							<div class="field has-addons">
-								<p class="control">
-									<input class="input" type="number" step="any" name="price" placeholder="New Price"/>
-								</p>
-								<p class="control">
-									<input class="input" type="number" step="any" name="quantity" placeholder="Quantity"/>
-								</p>
-								<p class="control">
-									<span class="select">
-										<select name="unit">
-											for _, unit := range units {
-												<option
-													value={ strconv.FormatInt(unit.ID, 10) }
-													selected?={ len(ingredient.Prices)> 0 && ingredient.Prices[0].UnitID == unit.ID }
-												>{ unit.Name }</option>
-											}
-											if len(ingredient.Prices) == 0 {
-												<option selected hidden disabled></option>
-											}
-										</select>
-									</span>
-								</p>
-								<p class="control">
-									<button class="button" type="submit">
-										Insert
-									</button>
-								</p>
-							</div>
-						</form>
-						<table class="table is-fullwidth">
-							<thead>
-								<tr>
-									<th>Price</th>
-									<th>Unit</th>
-									<th>Date</th>
-								</tr>
-							</thead>
-							<tbody id={ fmt.Sprintf("ingredient-price-table-body-%d", ingredient.Ingredient.ID) }>
-								for _, price := range ingredient.Prices {
-									<tr>
-										<td>{ fmt.Sprintf("%.2f €", *price.Price) }</td>
-										<td>{ fmt.Sprintf("%.2f %s", price.Quantity, units[price.UnitID].Name) }</td>
-										<td>{ time.Unix(price.TimeStamp, 0).Format("2006-01-02 15:04:05") }</td>
-									</tr>
-								}
-							</tbody>
-						</table>
+templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap) {
+	<div class="block">
+		<div class="columns  is-align-items-flex-end">
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Name</label>
+					<div class="control">
+						<input class="input" type="text" value={ ingredient.Ingredient.Name } disabled/>
 					</div>
 				</div>
-				<button class="modal-close is-large" aria-label="close"></button>
 			</div>
-			<button
-				class="button is-link js-modal-trigger"
-				data-target={ fmt.Sprintf("ingredient-modal-%d",
-			ingredient.Ingredient.ID) }
+			<div
+				class="column"
+				id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) }
 			>
-				Edit
-			</button>
-		</td>
-		<td>
-			<button
-				class="button is-danger"
-				hx-delete={ fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID) }
-				hx-target="closest tr"
-				hx-swap="outerHTML"
-			>Delete</button>
-		</td>
-	</tr>
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Price</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input"
+								type="text"
+								disabled
+								if len(ingredient.Prices) > 0 {
+									value={ fmt.Sprintf("%.2f", *ingredient.Prices[0].Price) }
+								} else {
+									value="N/A"
+								}
+							/>
+						</p>
+						if len(ingredient.Prices) > 0 {
+							<p class="control">
+								<a class="button is-static">€</a>
+							</p>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Per</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input"
+								type="text"
+								disabled
+								if len(ingredient.Prices) > 0 {
+									value={ fmt.Sprintf("%.2f", ingredient.Prices[0].Quantity) }
+								} else {
+									value="N/A"
+								}
+							/>
+						</p>
+						if len(ingredient.Prices) > 0 {
+							<p class="control">
+								<a class="button is-static">{ units[ingredient.Prices[0].UnitID].Name }</a>
+							</p>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<button
+					class="button"
+					hx-get={ fmt.Sprintf("/ingredient/%d/edit", ingredient.Ingredient.ID) }
+					hx-target="closest .block"
+					hx-swap="outerHTML"
+				>
+					Edit
+				</button>
+			</div>
+		</div>
+	</div>
+}
+
+templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.UnitsMap) {
+	<div class="block">
+		<div class="columns  is-align-items-flex-end">
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Name</label>
+					<div class="control">
+						<input
+							class="input"
+							type="text"
+							value={ ingredient.Ingredient.Name }
+							form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
+							name="name"
+						/>
+					</div>
+				</div>
+			</div>
+			<div
+				class="column"
+				id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) }
+			>
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Price</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input"
+								type="text"
+								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
+								name="price"
+								if len(ingredient.Prices) > 0 {
+									value={ fmt.Sprintf("%.2f", *ingredient.Prices[0].Price) }
+								} else {
+									value=""
+								}
+							/>
+						</p>
+						if len(ingredient.Prices) > 0 {
+							<p class="control">
+								<a class="button is-static">€</a>
+							</p>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Per</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input is-fullwidth"
+								type="text"
+								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
+								if len(ingredient.Prices) > 0 {
+									value={ fmt.Sprintf("%.2f", *ingredient.Prices[0].Price) }
+								} else {
+									value=""
+								}
+								name="quantity"
+								id={ fmt.Sprintf("amount-%d", ingredient.Ingredient.ID) }
+								data-ingredient-id={ fmt.Sprintf("%d", ingredient.Ingredient.ID) }
+							/>
+						</p>
+						<p class="control">
+							<span class="select">
+								<select
+									form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
+									name="unit"
+									id={ fmt.Sprintf("unit-%d", ingredient.Ingredient.ID) }
+									data-ingredient-id={ fmt.Sprintf("%d", ingredient.Ingredient.ID) }
+								>
+									for _, unit := range(units) {
+										<option
+											selected?={ len(ingredient.Prices) > 0 && ingredient.Prices[0].UnitID == unit.ID }
+											value={ fmt.Sprintf("%d", unit.ID) }
+										>{ unit.Name }</option>
+									}
+								</select>
+							</span>
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<form
+					id={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
+				>
+					<button
+						type="submit"
+						class="button"
+						hx-put={ fmt.Sprintf("/ingredient-price/%d", ingredient.Ingredient.ID) }
+						hx-target="closest .block"
+						hx-swap="outerHTML"
+					>
+						Safe
+					</button>
+					<button class="button">
+						Delete
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
 }
 
 templ IngredientPriceOob(price db.IngredientPrice, units services.UnitsMap) {

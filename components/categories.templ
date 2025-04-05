@@ -81,22 +81,37 @@ templ CategoryRowEdit(category db.Category) {
 	<div class="block">
 		<div class="columns is-align-items-flex-end">
 			<div class="column">
-				<input
-					class="input"
-					name="name"
-					type="text"
-					form={ fmt.Sprintf("category-%d-form", category.ID) }
-					value={ category.Name }
-				/>
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Name</label>
+					<div class="control">
+						<input
+							class="input"
+							name="name"
+							type="text"
+							form={ fmt.Sprintf("category-%d-form", category.ID) }
+							value={ category.Name }
+						/>
+					</div>
+				</div>
 			</div>
 			<div class="column">
-				<input
-					class="input"
-					name="vat"
-					type="number"
-					form={ fmt.Sprintf("category-%d-form", category.ID) }
-					value={ strconv.FormatInt(category.Vat, 10) }
-				/>
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">VAT</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input"
+								name="vat"
+								type="text"
+								form={ fmt.Sprintf("category-%d-form", category.ID) }
+								value={ strconv.FormatInt(category.Vat, 10) }
+							/>
+						</p>
+						<p class="control">
+							<a class="button is-static">%</a>
+						</p>
+					</div>
+				</div>
 			</div>
 			<div class="column">
 				<form

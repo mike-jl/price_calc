@@ -1,14 +1,5 @@
--- name: GetIngredientsWithPrices :many
-select
-    i.id, name, ip.id as price_id, time_stamp, price, quantity, unit_id, ingredient_id
-from ingredients i
-left join ingredient_prices ip on ip.ingredient_id = i.id
-order by i.name collate nocase asc, ip.time_stamp desc
-limit 5
-;
-
 -- name: GetIngredientsWithPriceUnit :many
-select i.*, ip.price, ip.unit_id, ip.quantity
+select i.*, ip.id as price_id, ip.price, ip.unit_id, ip.quantity, ip.time_stamp
 from ingredients i
 left join
     ingredient_prices ip
@@ -17,12 +8,12 @@ left join
         from ingredient_prices as ip2
         where ip2.ingredient_id = i.id
         order by time_stamp desc
-        limit 1
+        limit ?
     )
 ;
 
 -- name: GetIngredientWithPriceUnit :one
-select i.*, ip.price, ip.unit_id, ip.quantity
+select i.*, ip.id as price_id, ip.price, ip.unit_id, ip.quantity, ip.time_stamp
 from ingredients i
 left join
     ingredient_prices ip
@@ -31,7 +22,7 @@ left join
         from ingredient_prices as ip2
         where ip2.ingredient_id = i.id
         order by time_stamp desc
-        limit 1
+        limit ?
     )
 where i.id = ?
 ;
@@ -39,6 +30,13 @@ where i.id = ?
 -- name: PutIngredient :one
 insert into ingredients(name)
 values (?)
+returning *
+;
+
+-- name: UpdateIngredient :one
+update ingredients
+set name=?
+where ( id = ? )
 returning *
 ;
 
@@ -111,12 +109,12 @@ select
     p.price,
     p.multiplicator,
     p.category_id,
-    cast(ifnull(sum(ip.price * iu.quantity), 0) as real) as cost
+    cast(ifnull(sum(ip.price * ip.quantity * iu.quantity), 0) as real) as cost
 from products p
 left join ingredient_usage iu on iu.product_id = p.id
 left join
     (
-        select price, ingredient_id, max(time_stamp)
+        select price, ingredient_id, quantity, max(time_stamp)
         from ingredient_prices
         group by ingredient_id
     ) ip

@@ -58,7 +58,7 @@ templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap)
 								type="text"
 								disabled
 								if len(ingredient.Prices) > 0 {
-									value={ fmt.Sprintf("%.2f", *ingredient.Prices[0].Price) }
+									value={ fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity) }
 								} else {
 									value="N/A"
 								}
@@ -141,7 +141,7 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
 								name="price"
 								if len(ingredient.Prices) > 0 {
-									value={ fmt.Sprintf("%.2f", *ingredient.Prices[0].Price) }
+									value={ fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity) }
 								} else {
 									value=""
 								}
@@ -165,7 +165,7 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 								type="text"
 								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
 								if len(ingredient.Prices) > 0 {
-									value={ fmt.Sprintf("%.2f", *ingredient.Prices[0].Price) }
+									value={ fmt.Sprintf("%.2f", ingredient.Prices[0].Quantity) }
 								} else {
 									value=""
 								}

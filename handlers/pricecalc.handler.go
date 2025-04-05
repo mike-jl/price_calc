@@ -384,7 +384,7 @@ func (ph *PriceCalcHandler) getIngredientUsageEdit(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get ingredient "+err.Error())
 	}
 
-	baseUnitID := *&ingredient.Prices[0].UnitID
+	baseUnitID := ingredient.Prices[0].UnitID
 	if ph.service.Units[baseUnitID].BaseUnitID != nil {
 		baseUnitID = *ph.service.Units[baseUnitID].BaseUnitID
 	}

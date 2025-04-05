@@ -96,8 +96,8 @@ func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
 		var price *db.IngredientPrice = nil
 		// check if a price is in the row, if so, fill out price struct
 		if ingredientRow.PriceID != nil {
-			displayPrice := *ingredientRow.Price * *ingredientRow.Quantity
-			displayQuantity := *ingredientRow.Quantity * pc.Units[*ingredientRow.UnitID].Factor
+			displayPrice := *ingredientRow.Price       // * *ingredientRow.Quantity
+			displayQuantity := *ingredientRow.Quantity // * pc.Units[*ingredientRow.UnitID].Factor
 
 			price = &db.IngredientPrice{
 				ID:           *ingredientRow.PriceID,
@@ -128,6 +128,31 @@ func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
 			out[i].Prices = append(out[i].Prices, *price)
 		}
 	}
+	return out
+}
+
+func (pc *PriceCalcService) parseIngredientWithPriceUnitRow(
+	ingredient db.GetIngredientWithPriceUnitRow,
+) (out db.IngredientWithPrices) {
+	out = db.IngredientWithPrices{
+		Ingredient: db.Ingredient{ID: ingredient.ID, Name: ingredient.Name},
+		Prices:     []db.IngredientPrice{},
+	}
+	// check if a price is in the row, if so, fill out price struct
+	if ingredient.PriceID != nil {
+		displayPrice := *ingredient.Price       // * *ingredient.Quantity
+		displayQuantity := *ingredient.Quantity // * pc.Units[*ingredient.UnitID].Factor
+
+		out.Prices = append(out.Prices, db.IngredientPrice{
+			ID:           *ingredient.PriceID,
+			TimeStamp:    *ingredient.TimeStamp,
+			IngredientID: ingredient.ID,
+			Price:        &displayPrice,
+			Quantity:     displayQuantity,
+			UnitID:       *ingredient.UnitID,
+		})
+	}
+
 	return out
 }
 
@@ -205,7 +230,7 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 
 	qtx := pc.queries.WithTx(tx)
 
-	ingredientWithPrice, err := qtx.GetIngredientWithPriceUnit(
+	ingredientWithPriceRow, err := qtx.GetIngredientWithPriceUnit(
 		ctx,
 		db.GetIngredientWithPriceUnitParams{
 			ID:    ingredientId,
@@ -216,32 +241,35 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 		return nil, err
 	}
 
-	if ingredientWithPrice.Name != ingredientName {
-		_, err = qtx.UpdateIngredient(ctx, db.UpdateIngredientParams{
+	if ingredientWithPriceRow.Name != ingredientName {
+		ingredient, err := qtx.UpdateIngredient(ctx, db.UpdateIngredientParams{
 			ID:   ingredientId,
 			Name: ingredientName,
 		})
 		if err != nil {
 			return nil, err
 		}
+
+		ingredientWithPriceRow.Name = ingredient.Name
 	}
 
-	ingredientPrice := db.IngredientPrice{
-		ID:        *ingredientWithPrice.PriceID,
-		TimeStamp: *ingredientWithPrice.TimeStamp,
-		Price:     ingredientWithPrice.Price,
-		Quantity:  *ingredientWithPrice.Quantity,
+	unit, ok := pc.Units[unitId]
+	if !ok {
+		return nil, errors.New("unit not found")
 	}
 
-	if ingredientWithPrice.PriceID == nil ||
-		*ingredientWithPrice.Price != price ||
-		*ingredientWithPrice.Quantity != quantity ||
-		*ingredientWithPrice.UnitID != unitId {
+	baseUnitQuantity := quantity / unit.Factor
+	baseUnitPrice := price / baseUnitQuantity
+	var ingredientPrice db.IngredientPrice
+	if ingredientWithPriceRow.PriceID == nil ||
+		*ingredientWithPriceRow.Price != baseUnitPrice ||
+		*ingredientWithPriceRow.Quantity != quantity ||
+		*ingredientWithPriceRow.UnitID != unitId {
 		ingredientPrice, err = qtx.PutIngredientPrice(
 			ctx,
 			db.PutIngredientPriceParams{
 				IngredientID: ingredientId,
-				Price:        &price,
+				Price:        &baseUnitPrice,
 				Quantity:     quantity,
 				UnitID:       unitId,
 			},
@@ -249,6 +277,12 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 		if err != nil {
 			return nil, err
 		}
+
+		ingredientWithPriceRow.PriceID = &ingredientPrice.ID
+		ingredientWithPriceRow.TimeStamp = &ingredientPrice.TimeStamp
+		ingredientWithPriceRow.Price = ingredientPrice.Price
+		ingredientWithPriceRow.Quantity = &ingredientPrice.Quantity
+		ingredientWithPriceRow.UnitID = &ingredientPrice.UnitID
 	}
 
 	// Commit the transaction
@@ -257,15 +291,9 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 		return nil, err
 	}
 
-	return &db.IngredientWithPrices{
-		Ingredient: db.Ingredient{
-			ID:   ingredientWithPrice.ID,
-			Name: ingredientWithPrice.Name,
-		},
-		Prices: []db.IngredientPrice{
-			ingredientPrice,
-		},
-	}, nil
+	out := pc.parseIngredientWithPriceUnitRow(ingredientWithPriceRow)
+
+	return &out, nil
 }
 
 func (pc *PriceCalcService) PutIngredientPrice(

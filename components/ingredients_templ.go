@@ -111,9 +111,9 @@ func IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap) 
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", *ingredient.Prices[0].Price))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 61, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 61, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -294,9 +294,9 @@ func IngredientRowEdit(ingredient db.IngredientWithPrices, units services.UnitsM
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", *ingredient.Prices[0].Price))
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 144, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 144, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -345,9 +345,9 @@ func IngredientRowEdit(ingredient db.IngredientWithPrices, units services.UnitsM
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", *ingredient.Prices[0].Price))
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", ingredient.Prices[0].Quantity))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 168, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 168, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {

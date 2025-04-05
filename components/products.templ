@@ -285,6 +285,8 @@ templ ProductRowEdit(product db.ProductWithCost, categories []db.Category, ingre
 									value={ fmt.Sprintf("%.2f", product.Product.Multiplicator) }
 									id={ fmt.Sprintf("product-multiplicator-input-%d", product.Product.ID) }
 									form={ fmt.Sprintf("product-edit-form-%d", product.Product.ID) }
+									oninput="refreshProductCost(this)"
+									data-product-id={ fmt.Sprintf("%d", product.Product.ID) }
 								/>
 							</div>
 						</div>

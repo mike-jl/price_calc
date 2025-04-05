@@ -313,7 +313,7 @@ select
     p.price,
     p.multiplicator,
     p.category_id,
-    cast(ifnull(sum(ip.price * ip.quantity * iu.quantity), 0) as real) as cost
+    cast(ifnull(sum(ip.price * iu.quantity), 0) as real) as cost
 from products p
 left join ingredient_usage iu on iu.product_id = p.id
 left join

@@ -1,38 +1,32 @@
 # Build stage
-FROM golang:1.24 as builder
+FROM golang:1.24 AS builder
 
-# Set working directory inside the container
+# Install tools needed to build go-sqlite3 (CGO)
+RUN apt-get update && apt-get install -y gcc libc6-dev
+
 WORKDIR /app
 
-# Copy go mod files and download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the application (source code, static files, etc.)
 COPY . .
 
-# Assume sqlc and templ-generated files are already present and committed
-# Build the Go app
+ENV CGO_ENABLED=1
+
 RUN go build -o main .
 
-# Final, minimal runtime image
-FROM alpine:latest
+# Runtime stage (Debian)
+FROM debian:bookworm-slim
 
-# Install CA certificates (for HTTPS if needed)
-RUN apk add --no-cache ca-certificates
+# Install required sqlite shared libraries
+RUN apt-get update && apt-get install -y sqlite3 libsqlite3-0 && rm -rf /var/lib/apt/lists/*
 
-# Set working directory in the runtime image
 WORKDIR /root/
 
-# Copy the built binary from the builder stage
 COPY --from=builder /app/main .
-
-# Copy static assets (needed at runtime)
 COPY --from=builder /app/assets ./assets
+COPY --from=builder /app/data ./data
 
-# Expose port (make sure your app listens on this port)
-EXPOSE 8080
+EXPOSE 42069
 
-# Run the binary
 CMD ["./main"]
-

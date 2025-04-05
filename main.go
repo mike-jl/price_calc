@@ -47,5 +47,5 @@ func main() {
 	handler := handlers.NewPriceCalcHandler(logger, service)
 	handlers.SetupRoutes(app, handler)
 
-	app.Logger.Fatal(app.Start("localhost:42069"))
+	app.Logger.Fatal(app.Start(":42069"))
 }

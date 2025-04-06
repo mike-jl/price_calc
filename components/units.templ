@@ -1,0 +1,243 @@
+package components
+
+import (
+	"github.com/mike-jl/price_calc/db"
+	"github.com/mike-jl/price_calc/services"
+	"fmt"
+)
+
+templ UnitsTable(units []db.Unit) {
+	<section class="hero is-info">
+		<div class="hero-body">
+			<form
+				hx-put="/unit"
+				hx-swap="beforebegin"
+				hx-target="#unit-table-end"
+			>
+				<div class="product-row">
+					<div class="block" x-data="{ base: 0 }">
+						<div class="columns is-align-items-flex-end">
+							<div class="column">
+								<div class="field">
+									<label class="label is-hidden-tablet product-label">Name</label>
+									<div class="control">
+										<input class="input" type="text" name="name"/>
+									</div>
+								</div>
+							</div>
+							<div class="column">
+								<div class="field">
+									<label class="label is-hidden-tablet product-label">Base Unit</label>
+									<div class="control is-expanded">
+										<div class="select is-fullwidth">
+											<select name="base-unit-id" x-model="base">
+												<option value="0" selected>Is Base</option>
+												for _, unit := range units {
+													if unit.BaseUnitID == nil {
+														<option value={ fmt.Sprintf("%d", unit.ID) }>{ unit.Name }</option>
+													}
+												}
+											</select>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="column">
+								<div class="field">
+									<label class="label is-hidden-tablet product-label">Factor</label>
+									<div class="field has-addons">
+										<p class="control is-expanded">
+											<input
+												class="input"
+												type="text"
+												value="1.00"
+												name="factor"
+												x-bind:disabled="base == 0"
+											/>
+										</p>
+									</div>
+								</div>
+							</div>
+							<div class="column is-3">
+								<button
+									id="product-modal-button"
+									class="button is-success"
+									hx-swap="beforebegin"
+									hx-target="#product-table-end"
+								>
+									Add
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</section>
+	<section class="section">
+		<div class="product-row">
+			for _, unit := range units {
+				if baseUnit, ok := services.First(units, func(u db.Unit) bool {
+					return unit.BaseUnitID != nil && *unit.BaseUnitID == u.ID
+				}); ok {
+					@UnitRow(unit, &baseUnit)
+				} else {
+					@UnitRow(unit, nil)
+				}
+			}
+		</div>
+		<div id="unit-table-end"></div>
+	</section>
+}
+
+templ UnitRow(unit db.Unit, baseUnit *db.Unit) {
+	<div class="block">
+		<div class="columns is-align-items-flex-end">
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Name</label>
+					<div class="control">
+						<input class="input" type="text" value={ unit.Name } disabled/>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Base Unit</label>
+					<div class="control is-expanded">
+						<div class="select is-fullwidth">
+							<select disabled>
+								if baseUnit != nil {
+									<option selected>{ baseUnit.Name }</option>
+								} else {
+									<option selected>Is Base</option>
+								}
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Factor</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input"
+								type="text"
+								disabled
+								value={ fmt.Sprintf("%.2f", unit.Factor) }
+							/>
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="column is-3">
+				<button
+					id="product-modal-button"
+					class="button is-link"
+					hx-get={ fmt.Sprintf("/unit/%d/edit", unit.ID) }
+					hx-target="closest .block"
+					hx-swap="outerHTML"
+				>
+					Edit
+				</button>
+			</div>
+		</div>
+	</div>
+}
+
+templ UnitRowEdit(unit db.Unit, units []db.Unit) {
+	<div
+		class="block"
+		x-data={ fmt.Sprintf(`{ base: '%s' }`, 
+    func() string {
+        if unit.BaseUnitID != nil {
+            return fmt.Sprintf("%d", *unit.BaseUnitID)
+        }
+        return fmt.Sprintf("0")
+    }(),
+) }
+	>
+		<div class="columns is-align-items-flex-end">
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Name</label>
+					<div class="control">
+						<input
+							class="input"
+							type="text"
+							value={ unit.Name }
+							name="name"
+							form={ fmt.Sprintf("unit-edit-form-%d", unit.ID) }
+						/>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Base Unit</label>
+					<div class="control is-expanded">
+						<div class="select is-fullwidth">
+							<select
+								x-model="base"
+								name="base-unit-id"
+								form={ fmt.Sprintf("unit-edit-form-%d", unit.ID) }
+							>
+								<option value="0">Is Base</option>
+								for _, unit := range units {
+									if unit.BaseUnitID == nil {
+										<option value={ fmt.Sprintf("%d", unit.ID) }>
+											{ unit.Name }
+										</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Factor</label>
+					<div class="field has-addons">
+						<p class="control is-expanded">
+							<input
+								class="input"
+								type="text"
+								x-bind:disabled="base == 0"
+								value={ fmt.Sprintf("%.2f", unit.Factor) }
+								form={ fmt.Sprintf("unit-edit-form-%d", unit.ID) }
+								name="factor"
+							/>
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="column is-3">
+				<form
+					id={ fmt.Sprintf("unit-edit-form-%d", unit.ID) }
+					hx-post={ fmt.Sprintf("/unit/%d", unit.ID) }
+					hx-target="closest .block"
+					hx-swap="outerHTML"
+				>
+					<button
+						id="product-modal-button"
+						class="button is-link"
+						type="submit"
+					>
+						Safe
+					</button>
+					<button
+						class="button is-danger"
+						hx-delete={ fmt.Sprintf("/unit/%d", unit.ID) }
+						hx-target="closest .block"
+						hx-swap="outerHTML"
+					>
+						Delete
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}

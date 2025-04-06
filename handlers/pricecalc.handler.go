@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/labstack/echo/v4"
@@ -39,10 +40,16 @@ func (ph *PriceCalcHandler) index(c echo.Context) error {
 		ph.log.Error(err.Error())
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	products, err := ph.service.GetProductNames()
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+	}
+
 	return render(
 		c,
 		http.StatusOK,
-		components.Index(components.IngredientsTable(ingredients, ph.service.Units)),
+		components.Index(components.IngredientsTable(ingredients, ph.service.Units, products)),
 	)
 }
 
@@ -59,10 +66,15 @@ func (ph *PriceCalcHandler) putIngredient(c echo.Context) error {
 			Name: ingredient.Name,
 		},
 	}
+	products, err := ph.service.GetProductNames()
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+	}
 	return render(
 		c,
 		http.StatusCreated,
-		components.IngredientRow(ingredientWithPrice, ph.service.Units),
+		components.IngredientRow(ingredientWithPrice, ph.service.Units, products),
 	)
 }
 
@@ -70,10 +82,6 @@ func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
 	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
-	}
-	price, err := strconv.ParseFloat(c.FormValue("price"), 64)
-	if err != nil {
-		return c.String(http.StatusBadRequest, "could not parse price "+err.Error())
 	}
 	quantity, err := strconv.ParseFloat(c.FormValue("quantity"), 64)
 	if err != nil {
@@ -84,18 +92,48 @@ func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
 	}
 
+	ingType := c.FormValue("type")
+	if ingType != "price" && ingType != "product" {
+		return c.String(http.StatusBadRequest, "could not parse type "+ingType)
+	}
+	price := float64(0)
+	pricePtr := &price
+	baseProductId := int64(0)
+	baseProductIdPtr := &baseProductId
+
+	switch ingType {
+	case "price":
+		price, err = strconv.ParseFloat(c.FormValue("price"), 64)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "could not parse price "+err.Error())
+		}
+		baseProductIdPtr = nil
+	case "product":
+		baseProductId, err = strconv.ParseInt(c.FormValue("base-product-id"), 10, 64)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "could not parse base product id "+err.Error())
+		}
+		pricePtr = nil
+	}
+
 	name := c.FormValue("name")
 
 	ingredientWithPrice, err := ph.service.UpdateIngredientWithPrice(
-		ingredientId, name, price, quantity, unitId, c.Request().Context())
+		ingredientId, name, pricePtr, quantity, unitId, baseProductIdPtr, c.Request().Context())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not update ingredient "+err.Error())
+	}
+
+	products, err := ph.service.GetProductNames()
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
 
 	return render(
 		c,
 		http.StatusCreated,
-		components.IngredientRow(*ingredientWithPrice, ph.service.Units),
+		components.IngredientRow(*ingredientWithPrice, ph.service.Units, products),
 	)
 }
 
@@ -111,7 +149,17 @@ func (ph *PriceCalcHandler) getIngredientEdit(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get ingredient "+err.Error())
 	}
 
-	return render(c, http.StatusOK, components.IngredientRowEdit(*ingredient, ph.service.Units))
+	products, err := ph.service.GetProductNames()
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+	}
+
+	return render(
+		c,
+		http.StatusOK,
+		components.IngredientRowEdit(*ingredient, ph.service.Units, products),
+	)
 }
 
 func (ph *PriceCalcHandler) deleteIngredient(c echo.Context) error {
@@ -119,11 +167,29 @@ func (ph *PriceCalcHandler) deleteIngredient(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
 	}
+
+	// Check if the ingredient is used in any product
+	products, err := ph.service.GetProductsWithIngredient(ingredientId)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+	}
+
+	if len(products) > 0 {
+		return c.String(
+			http.StatusConflict,
+			"Cannot delete ingredient because its still used in the following products:\n"+strings.Join(
+				products,
+				", ",
+			),
+		)
+	}
+
 	err = ph.service.DeleteIngredient(ingredientId)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not delete ingredient "+err.Error())
 	}
-	return nil
+
+	return c.String(http.StatusOK, "")
 }
 
 func (ph *PriceCalcHandler) products(c echo.Context) error {
@@ -233,6 +299,13 @@ func (ph *PriceCalcHandler) getProductEdit(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get product "+err.Error())
 	}
 	ingredientUsage, err := ph.service.GetIngredientUsageForProduct(productId)
+	if err != nil {
+		return c.String(
+			http.StatusInternalServerError,
+			"could not get ingredient usage "+err.Error(),
+		)
+	}
+
 	categories, err := ph.service.GetCategories()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get categories "+err.Error())
@@ -339,6 +412,22 @@ func (ph *PriceCalcHandler) putIngredientUsage(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "could not parse quantity "+err.Error())
 	}
+
+	// check for circular dependencies
+	circ, err := ph.service.CheckCircularDependency(productId, ingredientId)
+	if err != nil {
+		return c.String(
+			http.StatusInternalServerError,
+			"could not check circular dependency "+err.Error(),
+		)
+	}
+	if circ {
+		return c.String(
+			http.StatusConflict,
+			"Can't add ingredient usage because it would create a circular dependency!",
+		)
+	}
+
 	baseQuantity := quantity / ph.service.Units[unitId].Factor
 	ingredientUsage, err := ph.service.PutIngredientUsage(
 		ingredientId,
@@ -449,6 +538,224 @@ func (ph *PriceCalcHandler) deleteIngredientUsage(c echo.Context) error {
 			http.StatusInternalServerError,
 			"could not delete ingredient usage "+err.Error(),
 		)
+	}
+	return c.NoContent(http.StatusOK)
+}
+
+func (ph *PriceCalcHandler) getUnits(c echo.Context) error {
+	units, err := ph.service.GetUnits()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+	return render(c, http.StatusOK, components.Index(components.UnitsTable(units)))
+}
+
+func (ph *PriceCalcHandler) putUnit(c echo.Context) error {
+	name := strings.TrimSpace(c.FormValue("name"))
+	if name == "" {
+		return c.String(http.StatusBadRequest, "unit name is empty")
+	}
+	baseUnitId, err := strconv.ParseInt(c.FormValue("base-unit-id"), 10, 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse base unit id "+err.Error())
+	}
+
+	factor := float64(1)
+	if baseUnitId != 0 {
+		factor, err = strconv.ParseFloat(c.FormValue("factor"), 64)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "could not parse factor "+err.Error())
+		}
+		if factor <= 0 {
+			return c.String(http.StatusBadRequest, "factor must be greater than 0")
+		}
+	}
+
+	var baseUnitIdPtr *int64 = nil
+	if baseUnitId != 0 {
+		baseUnitIdPtr = &baseUnitId
+	}
+
+	newUnit, err := ph.service.InsertUnit(name, baseUnitIdPtr, factor, c.Request().Context())
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not insert unit "+err.Error())
+	}
+
+	var baseUnit *db.Unit = nil
+	if baseUnitId != 0 {
+		units, err := ph.service.GetUnits()
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "could not get base unit "+err.Error())
+		}
+		if bunit, ok := services.First(units, func(u db.Unit) bool {
+			return u.ID == baseUnitId
+		}); ok {
+			baseUnit = &bunit
+		}
+	}
+
+	return render(c, http.StatusOK, components.UnitRow(*newUnit, baseUnit))
+}
+
+func (ph *PriceCalcHandler) getUnitEdit(c echo.Context) error {
+	unitId, err := strconv.ParseInt(c.Param("unit-id"), 10, 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
+	}
+
+	units, err := ph.service.GetUnits()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
+	unit, ok := services.First(units, func(u db.Unit) bool {
+		return u.ID == unitId
+	})
+	if !ok {
+		return c.String(
+			http.StatusNotFound,
+			"could not find unit with id "+strconv.FormatInt(unitId, 10),
+		)
+	}
+
+	return render(c, http.StatusOK, components.UnitRowEdit(unit, units))
+}
+
+func (ph *PriceCalcHandler) postUnit(c echo.Context) error {
+	unitId, err := strconv.ParseInt(c.Param("unit-id"), 10, 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
+	}
+
+	name := strings.TrimSpace(c.FormValue("name"))
+	if name == "" {
+		return c.String(http.StatusBadRequest, "unit name is empty")
+	}
+	baseUnitId, err := strconv.ParseInt(c.FormValue("base-unit-id"), 10, 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse base unit id "+err.Error())
+	}
+
+	factor := float64(1)
+	if baseUnitId != 0 {
+		factor, err = strconv.ParseFloat(c.FormValue("factor"), 64)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "could not parse factor "+err.Error())
+		}
+		if factor <= 0 {
+			return c.String(http.StatusBadRequest, "factor must be greater than 0")
+		}
+	}
+
+	var baseUnitIdPtr *int64 = nil
+	if baseUnitId != 0 {
+		baseUnitIdPtr = &baseUnitId
+	}
+
+	units, err := ph.service.GetUnits()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
+	unit, ok := services.First(units, func(u db.Unit) bool {
+		return u.ID == unitId
+	})
+	if !ok {
+		return c.String(
+			http.StatusNotFound,
+			"could not find unit with id "+strconv.FormatInt(unitId, 10),
+		)
+	}
+
+	if baseUnitIdPtr != nil {
+		if _, ok := services.First(units, func(u db.Unit) bool {
+			return u.ID == *baseUnitIdPtr
+		}); !ok {
+			return c.String(
+				http.StatusBadRequest,
+				"could not find base unit with id "+strconv.FormatInt(*baseUnitIdPtr, 10),
+			)
+		}
+	}
+
+	if baseUnitIdPtr != nil && unit.BaseUnitID == nil {
+		dependentUnits := services.Where(units, func(u db.Unit) bool {
+			return u.BaseUnitID != nil && *u.BaseUnitID == unitId
+		})
+		if len(dependentUnits) > 0 {
+			return c.String(
+				http.StatusBadRequest,
+				"could not remove base unit because there are dependent units",
+			)
+		}
+	}
+
+	newUnit, err := ph.service.UpdateUnit(
+		unitId,
+		name,
+		baseUnitIdPtr,
+		factor,
+		c.Request().Context(),
+	)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not update unit "+err.Error())
+	}
+
+	baseUnit := &db.Unit{}
+	if baseUnitId != 0 {
+		if bunit, ok := services.First(units, func(u db.Unit) bool {
+			return u.ID == baseUnitId
+		}); ok {
+			baseUnit = &bunit
+		} else {
+			return c.String(
+				http.StatusInternalServerError,
+				"could not find base unit with id "+strconv.FormatInt(baseUnitId, 10),
+			)
+		}
+	}
+
+	return render(c, http.StatusOK, components.UnitRow(*newUnit, baseUnit))
+}
+
+func (ph *PriceCalcHandler) deleteUnit(c echo.Context) error {
+	unitId, err := strconv.ParseInt(c.Param("unit-id"), 10, 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
+	}
+
+	// Check if the unit is used in any ingredient
+	ingredients, err := ph.service.GetIngredientsFromUnit(unitId, c.Request().Context())
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get ingredients "+err.Error())
+	}
+	if len(ingredients) > 0 {
+		return c.String(
+			http.StatusConflict,
+			"Cannot delete unit because its still used in the following ingredients:\n"+strings.Join(
+				ingredients,
+				", ",
+			),
+		)
+	}
+
+	// check if unit is used in any product
+	products, err := ph.service.GetProductsFromUnit(unitId, c.Request().Context())
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+	}
+	if len(products) > 0 {
+		return c.String(http.StatusConflict,
+			"Cannot delete unit because its still used in the following products:\n"+strings.Join(
+				products,
+				", ",
+			),
+		)
+	}
+
+	err = ph.service.DeleteUnit(unitId, c.Request().Context())
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not delete unit "+err.Error())
 	}
 	return c.NoContent(http.StatusOK)
 }

@@ -16,6 +16,14 @@ CREATE TABLE products (
     ON UPDATE CASCADE
 );
 
+CREATE TABLE product_cost_cache (
+    product_id INTEGER PRIMARY KEY,
+    cost REAL NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES products(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
 CREATE TABLE ingredients (
     id  INTEGER PRIMARY KEY,
     name TEXT NOT NULL
@@ -23,7 +31,7 @@ CREATE TABLE ingredients (
 
 CREATE TABLE units (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     base_unit_id INTEGER,
     factor REAL NOT NULL DEFAULT 1
 );
@@ -50,7 +58,10 @@ CREATE TABLE ingredient_prices (
     ON UPDATE CASCADE,
     FOREIGN KEY(unit_id) REFERENCES units(id),
     FOREIGN KEY(base_product_id) REFERENCES products(id),
-    check (price is not null != base_product_id is null)
+    CHECK (
+        (price IS NOT NULL AND base_product_id IS NULL)
+        OR (price IS NULL AND base_product_id IS NOT NULL)
+    )
 );
 
 CREATE TABLE ingredient_usage (
@@ -60,7 +71,7 @@ CREATE TABLE ingredient_usage (
     ingredient_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
     FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
-    ON DELETE CASCADE
+    ON DELETE restrict
     ON UPDATE CASCADE,
     FOREIGN KEY(product_id) REFERENCES products(id)
     ON DELETE CASCADE

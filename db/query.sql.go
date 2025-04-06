@@ -24,19 +24,19 @@ func (q *Queries) DeleteIngredient(ctx context.Context, id int64) (int64, error)
 	return result.RowsAffected()
 }
 
-const deleteIngredientUsage = `-- name: DeleteIngredientUsage :execrows
+const deleteIngredientUsage = `-- name: DeleteIngredientUsage :one
 ;
 
 delete from ingredient_usage
 where (id = ?)
+returning product_id
 `
 
 func (q *Queries) DeleteIngredientUsage(ctx context.Context, id int64) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteIngredientUsage, id)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
+	row := q.db.QueryRowContext(ctx, deleteIngredientUsage, id)
+	var product_id int64
+	err := row.Scan(&product_id)
+	return product_id, err
 }
 
 const deleteProduct = `-- name: DeleteProduct :execrows
@@ -48,6 +48,21 @@ where id = ?
 
 func (q *Queries) DeleteProduct(ctx context.Context, id int64) (int64, error) {
 	result, err := q.db.ExecContext(ctx, deleteProduct, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const deleteUnit = `-- name: DeleteUnit :execrows
+;
+
+delete from units
+where id = ?
+`
+
+func (q *Queries) DeleteUnit(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteUnit, id)
 	if err != nil {
 		return 0, err
 	}
@@ -96,6 +111,21 @@ func (q *Queries) GetCategory(ctx context.Context, id int64) (Category, error) {
 	row := q.db.QueryRowContext(ctx, getCategory, id)
 	var i Category
 	err := row.Scan(&i.ID, &i.Name, &i.Vat)
+	return i, err
+}
+
+const getIngredient = `-- name: GetIngredient :one
+;
+
+select id, name
+from ingredients
+where id = ?
+`
+
+func (q *Queries) GetIngredient(ctx context.Context, id int64) (Ingredient, error) {
+	row := q.db.QueryRowContext(ctx, getIngredient, id)
+	var i Ingredient
+	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
 
@@ -157,10 +187,90 @@ func (q *Queries) GetIngredientUsageForProduct(ctx context.Context, productID in
 	return items, nil
 }
 
+const getIngredientUsageForProductWithPrice = `-- name: GetIngredientUsageForProductWithPrice :many
+;
+
+select iu.id, iu.quantity, iu.unit_id, iu.ingredient_id, iu.product_id, i.id, i.name, ip.id, ip.time_stamp, ip.price, ip.quantity, ip.unit_id, ip.ingredient_id, ip.base_product_id
+from ingredient_usage iu
+left join ingredients i on i.id = iu.ingredient_id
+left join
+    ingredient_prices ip
+    on ip.id = (
+        select id
+        from ingredient_prices as ip2
+        where ip2.ingredient_id = i.id
+        order by time_stamp desc
+        limit 1
+    )
+where iu.product_id = ?
+`
+
+type GetIngredientUsageForProductWithPriceRow struct {
+	ID             int64
+	Quantity       float64
+	UnitID         int64
+	IngredientID   int64
+	ProductID      int64
+	ID_2           *int64
+	Name           *string
+	ID_3           *int64
+	TimeStamp      *int64
+	Price          *float64
+	Quantity_2     *float64
+	UnitID_2       *int64
+	IngredientID_2 *int64
+	BaseProductID  *int64
+}
+
+func (q *Queries) GetIngredientUsageForProductWithPrice(ctx context.Context, productID int64) ([]GetIngredientUsageForProductWithPriceRow, error) {
+	rows, err := q.db.QueryContext(ctx, getIngredientUsageForProductWithPrice, productID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetIngredientUsageForProductWithPriceRow
+	for rows.Next() {
+		var i GetIngredientUsageForProductWithPriceRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Quantity,
+			&i.UnitID,
+			&i.IngredientID,
+			&i.ProductID,
+			&i.ID_2,
+			&i.Name,
+			&i.ID_3,
+			&i.TimeStamp,
+			&i.Price,
+			&i.Quantity_2,
+			&i.UnitID_2,
+			&i.IngredientID_2,
+			&i.BaseProductID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getIngredientWithPriceUnit = `-- name: GetIngredientWithPriceUnit :one
 ;
 
-select i.id, i.name, ip.id as price_id, ip.price, ip.unit_id, ip.quantity, ip.time_stamp
+select
+    i.id, i.name,
+    ip.id as price_id,
+    ip.price,
+    ip.unit_id,
+    ip.quantity,
+    ip.time_stamp,
+    ip.base_product_id
 from ingredients i
 left join
     ingredient_prices ip
@@ -180,13 +290,14 @@ type GetIngredientWithPriceUnitParams struct {
 }
 
 type GetIngredientWithPriceUnitRow struct {
-	ID        int64
-	Name      string
-	PriceID   *int64
-	Price     *float64
-	UnitID    *int64
-	Quantity  *float64
-	TimeStamp *int64
+	ID            int64
+	Name          string
+	PriceID       *int64
+	Price         *float64
+	UnitID        *int64
+	Quantity      *float64
+	TimeStamp     *int64
+	BaseProductID *int64
 }
 
 func (q *Queries) GetIngredientWithPriceUnit(ctx context.Context, arg GetIngredientWithPriceUnitParams) (GetIngredientWithPriceUnitRow, error) {
@@ -200,12 +311,52 @@ func (q *Queries) GetIngredientWithPriceUnit(ctx context.Context, arg GetIngredi
 		&i.UnitID,
 		&i.Quantity,
 		&i.TimeStamp,
+		&i.BaseProductID,
 	)
 	return i, err
 }
 
+const getIngredientsFromUnit = `-- name: GetIngredientsFromUnit :many
+;
+
+select distinct i.id, i.name
+from ingredient_prices ip
+join ingredients i on i.id = ip.ingredient_id
+where ip.unit_id = ?
+`
+
+func (q *Queries) GetIngredientsFromUnit(ctx context.Context, unitID int64) ([]Ingredient, error) {
+	rows, err := q.db.QueryContext(ctx, getIngredientsFromUnit, unitID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Ingredient
+	for rows.Next() {
+		var i Ingredient
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getIngredientsWithPriceUnit = `-- name: GetIngredientsWithPriceUnit :many
-select i.id, i.name, ip.id as price_id, ip.price, ip.unit_id, ip.quantity, ip.time_stamp
+select
+    i.id, i.name,
+    ip.id as price_id,
+    ip.price,
+    ip.unit_id,
+    ip.quantity,
+    ip.time_stamp,
+    ip.base_product_id
 from ingredients i
 left join
     ingredient_prices ip
@@ -219,13 +370,14 @@ left join
 `
 
 type GetIngredientsWithPriceUnitRow struct {
-	ID        int64
-	Name      string
-	PriceID   *int64
-	Price     *float64
-	UnitID    *int64
-	Quantity  *float64
-	TimeStamp *int64
+	ID            int64
+	Name          string
+	PriceID       *int64
+	Price         *float64
+	UnitID        *int64
+	Quantity      *float64
+	TimeStamp     *int64
+	BaseProductID *int64
 }
 
 func (q *Queries) GetIngredientsWithPriceUnit(ctx context.Context, limit int64) ([]GetIngredientsWithPriceUnitRow, error) {
@@ -245,7 +397,58 @@ func (q *Queries) GetIngredientsWithPriceUnit(ctx context.Context, limit int64) 
 			&i.UnitID,
 			&i.Quantity,
 			&i.TimeStamp,
+			&i.BaseProductID,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProductCost = `-- name: GetProductCost :one
+;
+
+select product_id, cost
+from product_cost_cache
+where product_id = ?
+`
+
+func (q *Queries) GetProductCost(ctx context.Context, productID int64) (ProductCostCache, error) {
+	row := q.db.QueryRowContext(ctx, getProductCost, productID)
+	var i ProductCostCache
+	err := row.Scan(&i.ProductID, &i.Cost)
+	return i, err
+}
+
+const getProductNames = `-- name: GetProductNames :many
+;
+
+select p.id, p.name
+from products p
+`
+
+type GetProductNamesRow struct {
+	ID   int64
+	Name string
+}
+
+func (q *Queries) GetProductNames(ctx context.Context) ([]GetProductNamesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProductNames)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProductNamesRow
+	for rows.Next() {
+		var i GetProductNamesRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -304,26 +507,86 @@ func (q *Queries) GetProductWithCost(ctx context.Context, id int64) (GetProductW
 	return i, err
 }
 
+const getProductsFromIngredient = `-- name: GetProductsFromIngredient :many
+;
+
+select distinct p.id, p.name
+from ingredient_usage iu
+join products p on p.id = iu.product_id
+where iu.ingredient_id = ?
+`
+
+type GetProductsFromIngredientRow struct {
+	ID   int64
+	Name string
+}
+
+func (q *Queries) GetProductsFromIngredient(ctx context.Context, ingredientID int64) ([]GetProductsFromIngredientRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProductsFromIngredient, ingredientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProductsFromIngredientRow
+	for rows.Next() {
+		var i GetProductsFromIngredientRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProductsFromUnit = `-- name: GetProductsFromUnit :many
+;
+
+select distinct p.id, p.name
+from ingredient_usage iu
+join products p on p.id = iu.product_id
+where iu.unit_id = ?
+`
+
+type GetProductsFromUnitRow struct {
+	ID   int64
+	Name string
+}
+
+func (q *Queries) GetProductsFromUnit(ctx context.Context, unitID int64) ([]GetProductsFromUnitRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProductsFromUnit, unitID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProductsFromUnitRow
+	for rows.Next() {
+		var i GetProductsFromUnitRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProductsWithCost = `-- name: GetProductsWithCost :many
 ;
 
-select
-    p.id,
-    p.name,
-    p.price,
-    p.multiplicator,
-    p.category_id,
-    cast(ifnull(sum(ip.price * iu.quantity), 0) as real) as cost
+select p.id, p.name, p.price, p.multiplicator, p.category_id, pc.cost
 from products p
-left join ingredient_usage iu on iu.product_id = p.id
-left join
-    (
-        select price, ingredient_id, quantity, max(time_stamp)
-        from ingredient_prices
-        group by ingredient_id
-    ) ip
-    on iu.ingredient_id = ip.ingredient_id
-group by p.id
+left join product_cost_cache pc on pc.product_id = p.id
 `
 
 type GetProductsWithCostRow struct {
@@ -332,7 +595,7 @@ type GetProductsWithCostRow struct {
 	Price         float64
 	Multiplicator float64
 	CategoryID    int64
-	Cost          float64
+	Cost          *float64
 }
 
 func (q *Queries) GetProductsWithCost(ctx context.Context) ([]GetProductsWithCostRow, error) {
@@ -448,6 +711,26 @@ func (q *Queries) GetProductsWithIngredients(ctx context.Context) ([]GetProducts
 	return items, nil
 }
 
+const getUnit = `-- name: GetUnit :one
+;
+
+select id, name, base_unit_id, factor
+from units
+where id = ?
+`
+
+func (q *Queries) GetUnit(ctx context.Context, id int64) (Unit, error) {
+	row := q.db.QueryRowContext(ctx, getUnit, id)
+	var i Unit
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.BaseUnitID,
+		&i.Factor,
+	)
+	return i, err
+}
+
 const getUnits = `-- name: GetUnits :many
 ;
 
@@ -481,6 +764,54 @@ func (q *Queries) GetUnits(ctx context.Context) ([]Unit, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertProductCost = `-- name: InsertProductCost :execrows
+;
+
+insert into product_cost_cache (product_id, cost)
+values (?, ?)
+on conflict (product_id) do update
+set cost = excluded.cost
+`
+
+type InsertProductCostParams struct {
+	ProductID int64
+	Cost      float64
+}
+
+func (q *Queries) InsertProductCost(ctx context.Context, arg InsertProductCostParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertProductCost, arg.ProductID, arg.Cost)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const insertUnit = `-- name: InsertUnit :one
+;
+
+insert into units (name, base_unit_id, factor)
+values (?, ?, ?)
+returning id, name, base_unit_id, factor
+`
+
+type InsertUnitParams struct {
+	Name       string
+	BaseUnitID *int64
+	Factor     float64
+}
+
+func (q *Queries) InsertUnit(ctx context.Context, arg InsertUnitParams) (Unit, error) {
+	row := q.db.QueryRowContext(ctx, insertUnit, arg.Name, arg.BaseUnitID, arg.Factor)
+	var i Unit
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.BaseUnitID,
+		&i.Factor,
+	)
+	return i, err
 }
 
 const putCategory = `-- name: PutCategory :one
@@ -554,16 +885,17 @@ func (q *Queries) PutIngredient(ctx context.Context, name string) (Ingredient, e
 const putIngredientPrice = `-- name: PutIngredientPrice :one
 ;
 
-insert into ingredient_prices (ingredient_id, price, quantity, unit_id)
-values (?, ?, ?, ?)
+insert into ingredient_prices (ingredient_id, price, quantity, unit_id, base_product_id)
+values (?, ?, ?, ?, ?)
 returning id, time_stamp, price, quantity, unit_id, ingredient_id, base_product_id
 `
 
 type PutIngredientPriceParams struct {
-	IngredientID int64
-	Price        *float64
-	Quantity     float64
-	UnitID       int64
+	IngredientID  int64
+	Price         *float64
+	Quantity      float64
+	UnitID        int64
+	BaseProductID *int64
 }
 
 func (q *Queries) PutIngredientPrice(ctx context.Context, arg PutIngredientPriceParams) (IngredientPrice, error) {
@@ -572,6 +904,7 @@ func (q *Queries) PutIngredientPrice(ctx context.Context, arg PutIngredientPrice
 		arg.Price,
 		arg.Quantity,
 		arg.UnitID,
+		arg.BaseProductID,
 	)
 	var i IngredientPrice
 	err := row.Scan(
@@ -716,6 +1049,39 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		&i.Price,
 		&i.Multiplicator,
 		&i.CategoryID,
+	)
+	return i, err
+}
+
+const updateUnit = `-- name: UpdateUnit :one
+;
+
+update units
+set name=?, base_unit_id=?, factor=?
+where id=?
+returning id, name, base_unit_id, factor
+`
+
+type UpdateUnitParams struct {
+	Name       string
+	BaseUnitID *int64
+	Factor     float64
+	ID         int64
+}
+
+func (q *Queries) UpdateUnit(ctx context.Context, arg UpdateUnitParams) (Unit, error) {
+	row := q.db.QueryRowContext(ctx, updateUnit,
+		arg.Name,
+		arg.BaseUnitID,
+		arg.Factor,
+		arg.ID,
+	)
+	var i Unit
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.BaseUnitID,
+		&i.Factor,
 	)
 	return i, err
 }

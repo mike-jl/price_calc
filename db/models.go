@@ -41,6 +41,11 @@ type Product struct {
 	CategoryID    int64
 }
 
+type ProductCostCache struct {
+	ProductID int64
+	Cost      float64
+}
+
 type Unit struct {
 	ID         int64
 	Name       string

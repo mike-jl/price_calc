@@ -23,4 +23,9 @@ func SetupRoutes(e *echo.Echo, ph *PriceCalcHandler) {
 	e.GET("/ingredient-usage-edit/:ingredient-usage-id", ph.getIngredientUsageEdit)
 	e.POST("/ingredient-usage/:ingredient-usage-id", ph.postIngredientUsage)
 	e.DELETE("/ingredient-usage/:ingredient-usage-id", ph.deleteIngredientUsage)
+	e.GET("/units", ph.getUnits)
+	e.PUT("/unit", ph.putUnit)
+	e.GET("/unit/:unit-id/edit", ph.getUnitEdit)
+	e.POST("/unit/:unit-id", ph.postUnit)
+	e.DELETE("/unit/:unit-id", ph.deleteUnit)
 }

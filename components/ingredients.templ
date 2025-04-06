@@ -46,43 +46,6 @@ templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap,
 			</div>
 			<div
 				class="column"
-				id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) }
-			>
-				if len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil {
-					<div class="control is-expanded">
-						<div class="select is-fullwidth">
-							<select disabled>
-								<option>
-									{ products[*ingredient.Prices[0].BaseProductID] }
-								</option>
-							</select>
-						</div>
-					</div>
-				} else {
-					<div class="field">
-						<label class="label is-hidden-tablet product-label">Price</label>
-						<div class="field has-addons">
-							<p class="control is-expanded">
-								<input
-									class="input"
-									type="text"
-									disabled
-									if len(ingredient.Prices) > 0 && ingredient.Prices[0].Price != nil {
-										value={ fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity) }
-									} else {
-										value=""
-									}
-								/>
-							</p>
-							<p class="control">
-								<a class="button is-static">€</a>
-							</p>
-						</div>
-					</div>
-				}
-			</div>
-			<div
-				class="column"
 			>
 				<div class="field">
 					<label class="label is-hidden-tablet product-label">Type</label>
@@ -103,6 +66,43 @@ templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap,
 						</div>
 					</div>
 				</div>
+			</div>
+			<div
+				class="column"
+				id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) }
+			>
+				if len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil {
+					<div class="control is-expanded">
+						<div class="select is-fullwidth">
+							<select disabled>
+								<option>
+									{ products[*ingredient.Prices[0].BaseProductID] }
+								</option>
+							</select>
+						</div>
+					</div>
+				} else {
+					<div class="field">
+						<label class="label is-hidden-tablet product-label">Price / Base Product</label>
+						<div class="field has-addons">
+							<p class="control is-expanded">
+								<input
+									class="input"
+									type="text"
+									disabled
+									if len(ingredient.Prices) > 0 && ingredient.Prices[0].Price != nil {
+										value={ fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity) }
+									} else {
+										value=""
+									}
+								/>
+							</p>
+							<p class="control">
+								<a class="button is-static">€</a>
+							</p>
+						</div>
+					</div>
+				}
 			</div>
 			<div class="column">
 				<div class="field">
@@ -171,10 +171,30 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 			</div>
 			<div
 				class="column"
+			>
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Type</label>
+					<div class="control is-expanded">
+						<div class="select is-fullwidth">
+							<select
+								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
+								name="type"
+								id={ fmt.Sprintf("type-%d", ingredient.Ingredient.ID) }
+								x-model="type"
+							>
+								<option value="price">Base Ingredient</option>
+								<option value="product">Product</option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div
+				class="column"
 				x-show="type === 'price'"
 			>
 				<div class="field">
-					<label class="label is-hidden-tablet product-label">Price</label>
+					<label class="label is-hidden-tablet product-label">Price / Base Product</label>
 					<div class="field has-addons">
 						<p class="control is-expanded">
 							<input
@@ -200,7 +220,7 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 				x-show="type === 'product'"
 			>
 				<div class="field">
-					<label class="label is-hidden-tablet product-label">Price</label>
+					<label class="label is-hidden-tablet product-label">Price / Base Product</label>
 					<p class="control is-expanded">
 						<div class="select is-fullwidth">
 							<select
@@ -218,26 +238,6 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 							</select>
 						</div>
 					</p>
-				</div>
-			</div>
-			<div
-				class="column"
-			>
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Type</label>
-					<div class="control is-expanded">
-						<div class="select is-fullwidth">
-							<select
-								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-								name="type"
-								id={ fmt.Sprintf("type-%d", ingredient.Ingredient.ID) }
-								x-model="type"
-							>
-								<option value="price">Base Ingredient</option>
-								<option value="product">Product</option>
-							</select>
-						</div>
-					</div>
 				</div>
 			</div>
 			<div class="column">

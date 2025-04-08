@@ -206,20 +206,20 @@ where iu.product_id = ?
 `
 
 type GetIngredientUsageForProductWithPriceRow struct {
-	ID             int64
-	Quantity       float64
-	UnitID         int64
-	IngredientID   int64
-	ProductID      int64
-	ID_2           *int64
-	Name           *string
-	ID_3           *int64
-	TimeStamp      *int64
-	Price          *float64
-	Quantity_2     *float64
-	UnitID_2       *int64
-	IngredientID_2 *int64
-	BaseProductID  *int64
+	ID             int64    `json:"id"`
+	Quantity       float64  `json:"quantity"`
+	UnitID         int64    `json:"unit_id"`
+	IngredientID   int64    `json:"ingredient_id"`
+	ProductID      int64    `json:"product_id"`
+	ID_2           *int64   `json:"id_2"`
+	Name           *string  `json:"name"`
+	ID_3           *int64   `json:"id_3"`
+	TimeStamp      *int64   `json:"time_stamp"`
+	Price          *float64 `json:"price"`
+	Quantity_2     *float64 `json:"quantity_2"`
+	UnitID_2       *int64   `json:"unit_id_2"`
+	IngredientID_2 *int64   `json:"ingredient_id_2"`
+	BaseProductID  *int64   `json:"base_product_id"`
 }
 
 func (q *Queries) GetIngredientUsageForProductWithPrice(ctx context.Context, productID int64) ([]GetIngredientUsageForProductWithPriceRow, error) {
@@ -285,19 +285,19 @@ where i.id = ?
 `
 
 type GetIngredientWithPriceUnitParams struct {
-	Limit int64
-	ID    int64
+	Limit int64 `json:"limit"`
+	ID    int64 `json:"id"`
 }
 
 type GetIngredientWithPriceUnitRow struct {
-	ID            int64
-	Name          string
-	PriceID       *int64
-	Price         *float64
-	UnitID        *int64
-	Quantity      *float64
-	TimeStamp     *int64
-	BaseProductID *int64
+	ID            int64    `json:"id"`
+	Name          string   `json:"name"`
+	PriceID       *int64   `json:"price_id"`
+	Price         *float64 `json:"price"`
+	UnitID        *int64   `json:"unit_id"`
+	Quantity      *float64 `json:"quantity"`
+	TimeStamp     *int64   `json:"time_stamp"`
+	BaseProductID *int64   `json:"base_product_id"`
 }
 
 func (q *Queries) GetIngredientWithPriceUnit(ctx context.Context, arg GetIngredientWithPriceUnitParams) (GetIngredientWithPriceUnitRow, error) {
@@ -370,14 +370,14 @@ left join
 `
 
 type GetIngredientsWithPriceUnitRow struct {
-	ID            int64
-	Name          string
-	PriceID       *int64
-	Price         *float64
-	UnitID        *int64
-	Quantity      *float64
-	TimeStamp     *int64
-	BaseProductID *int64
+	ID            int64    `json:"id"`
+	Name          string   `json:"name"`
+	PriceID       *int64   `json:"price_id"`
+	Price         *float64 `json:"price"`
+	UnitID        *int64   `json:"unit_id"`
+	Quantity      *float64 `json:"quantity"`
+	TimeStamp     *int64   `json:"time_stamp"`
+	BaseProductID *int64   `json:"base_product_id"`
 }
 
 func (q *Queries) GetIngredientsWithPriceUnit(ctx context.Context, limit int64) ([]GetIngredientsWithPriceUnitRow, error) {
@@ -435,8 +435,8 @@ from products p
 `
 
 type GetProductNamesRow struct {
-	ID   int64
-	Name string
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 func (q *Queries) GetProductNames(ctx context.Context) ([]GetProductNamesRow, error) {
@@ -485,12 +485,12 @@ where p.id = ?
 `
 
 type GetProductWithCostRow struct {
-	ID            int64
-	Name          string
-	Price         float64
-	Multiplicator float64
-	CategoryID    int64
-	Cost          float64
+	ID            int64   `json:"id"`
+	Name          string  `json:"name"`
+	Price         float64 `json:"price"`
+	Multiplicator float64 `json:"multiplicator"`
+	CategoryID    int64   `json:"category_id"`
+	Cost          float64 `json:"cost"`
 }
 
 func (q *Queries) GetProductWithCost(ctx context.Context, id int64) (GetProductWithCostRow, error) {
@@ -517,8 +517,8 @@ where iu.ingredient_id = ?
 `
 
 type GetProductsFromIngredientRow struct {
-	ID   int64
-	Name string
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 func (q *Queries) GetProductsFromIngredient(ctx context.Context, ingredientID int64) ([]GetProductsFromIngredientRow, error) {
@@ -554,8 +554,8 @@ where iu.unit_id = ?
 `
 
 type GetProductsFromUnitRow struct {
-	ID   int64
-	Name string
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 func (q *Queries) GetProductsFromUnit(ctx context.Context, unitID int64) ([]GetProductsFromUnitRow, error) {
@@ -590,12 +590,12 @@ left join product_cost_cache pc on pc.product_id = p.id
 `
 
 type GetProductsWithCostRow struct {
-	ID            int64
-	Name          string
-	Price         float64
-	Multiplicator float64
-	CategoryID    int64
-	Cost          *float64
+	ID            int64    `json:"id"`
+	Name          string   `json:"name"`
+	Price         float64  `json:"price"`
+	Multiplicator float64  `json:"multiplicator"`
+	CategoryID    int64    `json:"category_id"`
+	Cost          *float64 `json:"cost"`
 }
 
 func (q *Queries) GetProductsWithCost(ctx context.Context) ([]GetProductsWithCostRow, error) {
@@ -647,25 +647,25 @@ left join
 `
 
 type GetProductsWithIngredientsRow struct {
-	ID             int64
-	Name           string
-	Price          float64
-	Multiplicator  float64
-	CategoryID     int64
-	ID_2           *int64
-	Quantity       *float64
-	UnitID         *int64
-	IngredientID   *int64
-	ProductID      *int64
-	ID_3           *int64
-	Name_2         *string
-	ID_4           *int64
-	TimeStamp      *int64
-	Price_2        *float64
-	Quantity_2     *float64
-	UnitID_2       *int64
-	IngredientID_2 *int64
-	BaseProductID  *int64
+	ID             int64    `json:"id"`
+	Name           string   `json:"name"`
+	Price          float64  `json:"price"`
+	Multiplicator  float64  `json:"multiplicator"`
+	CategoryID     int64    `json:"category_id"`
+	ID_2           *int64   `json:"id_2"`
+	Quantity       *float64 `json:"quantity"`
+	UnitID         *int64   `json:"unit_id"`
+	IngredientID   *int64   `json:"ingredient_id"`
+	ProductID      *int64   `json:"product_id"`
+	ID_3           *int64   `json:"id_3"`
+	Name_2         *string  `json:"name_2"`
+	ID_4           *int64   `json:"id_4"`
+	TimeStamp      *int64   `json:"time_stamp"`
+	Price_2        *float64 `json:"price_2"`
+	Quantity_2     *float64 `json:"quantity_2"`
+	UnitID_2       *int64   `json:"unit_id_2"`
+	IngredientID_2 *int64   `json:"ingredient_id_2"`
+	BaseProductID  *int64   `json:"base_product_id"`
 }
 
 func (q *Queries) GetProductsWithIngredients(ctx context.Context) ([]GetProductsWithIngredientsRow, error) {
@@ -776,8 +776,8 @@ set cost = excluded.cost
 `
 
 type InsertProductCostParams struct {
-	ProductID int64
-	Cost      float64
+	ProductID int64   `json:"product_id"`
+	Cost      float64 `json:"cost"`
 }
 
 func (q *Queries) InsertProductCost(ctx context.Context, arg InsertProductCostParams) (int64, error) {
@@ -797,9 +797,9 @@ returning id, name, base_unit_id, factor
 `
 
 type InsertUnitParams struct {
-	Name       string
-	BaseUnitID *int64
-	Factor     float64
+	Name       string  `json:"name"`
+	BaseUnitID *int64  `json:"base_unit_id"`
+	Factor     float64 `json:"factor"`
 }
 
 func (q *Queries) InsertUnit(ctx context.Context, arg InsertUnitParams) (Unit, error) {
@@ -823,8 +823,8 @@ returning id, name, vat
 `
 
 type PutCategoryParams struct {
-	Name string
-	Vat  int64
+	Name string `json:"name"`
+	Vat  int64  `json:"vat"`
 }
 
 func (q *Queries) PutCategory(ctx context.Context, arg PutCategoryParams) (Category, error) {
@@ -843,10 +843,10 @@ returning id, quantity, unit_id, ingredient_id, product_id
 `
 
 type PutIngredeintUsageParams struct {
-	Quantity     float64
-	UnitID       int64
-	IngredientID int64
-	ProductID    int64
+	Quantity     float64 `json:"quantity"`
+	UnitID       int64   `json:"unit_id"`
+	IngredientID int64   `json:"ingredient_id"`
+	ProductID    int64   `json:"product_id"`
 }
 
 func (q *Queries) PutIngredeintUsage(ctx context.Context, arg PutIngredeintUsageParams) (IngredientUsage, error) {
@@ -891,11 +891,11 @@ returning id, time_stamp, price, quantity, unit_id, ingredient_id, base_product_
 `
 
 type PutIngredientPriceParams struct {
-	IngredientID  int64
-	Price         *float64
-	Quantity      float64
-	UnitID        int64
-	BaseProductID *int64
+	IngredientID  int64    `json:"ingredient_id"`
+	Price         *float64 `json:"price"`
+	Quantity      float64  `json:"quantity"`
+	UnitID        int64    `json:"unit_id"`
+	BaseProductID *int64   `json:"base_product_id"`
 }
 
 func (q *Queries) PutIngredientPrice(ctx context.Context, arg PutIngredientPriceParams) (IngredientPrice, error) {
@@ -928,8 +928,8 @@ returning id, name, price, multiplicator, category_id
 `
 
 type PutProductParams struct {
-	Name       string
-	CategoryID int64
+	Name       string `json:"name"`
+	CategoryID int64  `json:"category_id"`
 }
 
 func (q *Queries) PutProduct(ctx context.Context, arg PutProductParams) (Product, error) {
@@ -956,9 +956,9 @@ returning id, name, vat
 `
 
 type UpdateCategoryParams struct {
-	Name string
-	Vat  int64
-	ID   int64
+	Name string `json:"name"`
+	Vat  int64  `json:"vat"`
+	ID   int64  `json:"id"`
 }
 
 func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {
@@ -978,8 +978,8 @@ returning id, name
 `
 
 type UpdateIngredientParams struct {
-	Name string
-	ID   int64
+	Name string `json:"name"`
+	ID   int64  `json:"id"`
 }
 
 func (q *Queries) UpdateIngredient(ctx context.Context, arg UpdateIngredientParams) (Ingredient, error) {
@@ -999,9 +999,9 @@ returning id, quantity, unit_id, ingredient_id, product_id
 `
 
 type UpdateIngredientUsageParams struct {
-	Quantity float64
-	UnitID   int64
-	ID       int64
+	Quantity float64 `json:"quantity"`
+	UnitID   int64   `json:"unit_id"`
+	ID       int64   `json:"id"`
 }
 
 func (q *Queries) UpdateIngredientUsage(ctx context.Context, arg UpdateIngredientUsageParams) (IngredientUsage, error) {
@@ -1027,11 +1027,11 @@ returning id, name, price, multiplicator, category_id
 `
 
 type UpdateProductParams struct {
-	Name          string
-	CategoryID    int64
-	Price         float64
-	Multiplicator float64
-	ID            int64
+	Name          string  `json:"name"`
+	CategoryID    int64   `json:"category_id"`
+	Price         float64 `json:"price"`
+	Multiplicator float64 `json:"multiplicator"`
+	ID            int64   `json:"id"`
 }
 
 func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error) {
@@ -1063,10 +1063,10 @@ returning id, name, base_unit_id, factor
 `
 
 type UpdateUnitParams struct {
-	Name       string
-	BaseUnitID *int64
-	Factor     float64
-	ID         int64
+	Name       string  `json:"name"`
+	BaseUnitID *int64  `json:"base_unit_id"`
+	Factor     float64 `json:"factor"`
+	ID         int64   `json:"id"`
 }
 
 func (q *Queries) UpdateUnit(ctx context.Context, arg UpdateUnitParams) (Unit, error) {

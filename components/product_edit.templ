@@ -1,0 +1,425 @@
+package components
+
+import (
+	"github.com/mike-jl/price_calc/viewModels"
+	"github.com/mike-jl/price_calc/db"
+)
+
+templ ProductEdit(viewModel viewmodels.ProductEditViewModel) {
+	@templ.JSONScript("viewModel", viewModel)
+	<script type="module">
+		import { getProductEditData } from '/product_edit.js';
+		document.addEventListener('alpine:init', () => {
+			Alpine.data('productEditData', getProductEditData);
+		});
+	</script>
+	<div x-data="productEditData">
+		<section class="section hero is-info block">
+			<div class="container">
+				<div
+					class="hero-body p-0"
+				>
+					<div class="columns">
+						<div class="column">
+							<div class="field">
+								<label class="label">Name</label>
+								<div class="control">
+									<input
+										class="input"
+										x-model="product.product.name"
+										name="name"
+										form="product-edit-form"
+									/>
+								</div>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Category</label>
+								<div class="control is-expanded">
+									<div class="select is-fullwidth">
+										<select
+											name="category"
+											x-model="selectedCat"
+											form="product-edit-form"
+										>
+											<template x-for="(cat, i) in categories" :key="i">
+												<option :value="i" :selected="selectedCat === i" x-text="cat.name + ' - ' + cat.vat + '%'"></option>
+											</template>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Gross Price (calculated)</label>
+								<div class="field has-addons">
+									<p class="control is-expanded">
+										<input
+											class="input"
+											type="text"
+											disabled
+											:value="(productCost * product.product.multiplicator * (1+(categories[selectedCat].vat/100))).toFixed(2)"
+										/>
+									</p>
+									<p class="control">
+										<a class="button is-static">€</a>
+									</p>
+								</div>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Real Price</label>
+								<div class="field has-addons">
+									<p class="control is-expanded">
+										<input
+											class="input"
+											type="text"
+											name="price"
+											:value="product.product.price"
+											form="product-edit-form"
+										/>
+									</p>
+									<p class="control">
+										<a class="button is-static">€</a>
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="columns border">
+						<div class="column">
+							<div class="field">
+								<label class="label">Cost</label>
+								<div class="field has-addons">
+									<p class="control is-expanded">
+										<input
+											class="input"
+											type="text"
+											disabled
+											:value="productCost"
+										/>
+									</p>
+									<p class="control">
+										<a class="button is-static">€</a>
+									</p>
+								</div>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Multiplicator</label>
+								<div class="field has-addons">
+									<div class="control is-expanded">
+										<input
+											type="text"
+											name="multiplicator"
+											x-model="product.product.multiplicator"
+											class="input"
+											:class="{
+										'is-danger': !/^\s*\d*(\.\d+)?\s*$/.test(product.product.multiplicator)
+									}"
+											form="product-edit-form"
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Net Price (calculated)</label>
+								<div class="field has-addons">
+									<p class="control is-expanded">
+										<input
+											class="input"
+											type="text"
+											disabled
+											:value="(productCost * product.product.multiplicator).toFixed(2)"
+										/>
+									</p>
+									<p class="control">
+										<a class="button is-static">€</a>
+									</p>
+								</div>
+							</div>
+						</div>
+						<form
+							:hx-post="`/product/${product.product.id}`"
+							hx-swap="none"
+							id="product-edit-form"
+							class="column responsive-buttons"
+						>
+							<button
+								id="product-modal-button"
+								class="button is-link"
+								type="submit"
+							>
+								Safe
+							</button>
+							<button
+								class="button is-danger"
+								:hx-delete="`/product/${product.product.id}`"
+							>
+								Delete
+							</button>
+						</form>
+					</div>
+					<div class="columns">
+						<div class="column">
+							<div class="field">
+								<label class="label">New Ingredient</label>
+								<div class="control is-expanded">
+									<div class="select is-fullwidth">
+										<select
+											name="ingredient"
+											x-model.number="newIngredientId"
+											:form="`ingredient-form-${product.product.id}`"
+										>
+											<option selected value="0" disabled>Select Ingredient</option>
+											<template x-for="(ing, i) in ingredients" :key="ing.ingredient.id">
+												<option :value="ing.ingredient.id" x-text="ing.ingredient.name"></option>
+											</template>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Amount</label>
+								<div class="field has-addons">
+									<p class="control is-expanded">
+										<input
+											class="input is-fullwidth"
+											type="text"
+											:form="`ingredient-form-${product.product.id}`"
+											name="amount"
+											x-model.number="newIngredientAmount"
+										/>
+									</p>
+									<p class="control">
+										<span class="select">
+											<select
+												:form="`ingredient-form-${product.product.id}`"
+												name="unit"
+												x-model.number="newIngredientUnitId"
+											>
+												<template x-for="unit in getFilteredUnitsForUnitId(getSafeUnitIdFromIngredient(newIngredientId))" :key="unit.id">
+													<option :value="unit.id" x-text="unit.name"></option>
+												</template>
+											</select>
+										</span>
+									</p>
+								</div>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Cost</label>
+								<div class="field has-addons">
+									<p class="control is-expanded">
+										<input
+											class="input"
+											type="text"
+											disabled
+											:value="newIngredientCost"
+										/>
+									</p>
+									<p class="control">
+										<a class="button is-static">€</a>
+									</p>
+								</div>
+							</div>
+						</div>
+						<form
+							:id="`ingredient-form-${product.product.id}`"
+							:hx-put="`/ingredient-usage/${product.product.id}`"
+							hx-swap="afterbegin"
+							hx-target="#htmx-script-dump"
+							class="responsive-buttons column"
+						>
+							<button class="button is-success" type="submit">Add</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</section>
+		<section class="section">
+			<div class="product-row container">
+				<template x-for="(usage, i) in ingredient_usages" :key="usage.id">
+					<div class="block">
+						<template x-if="!usage.editing">
+							@IngredientUsageRowA()
+						</template>
+						<template x-if="usage.editing">
+							@IngredientUsageRowEditA()
+						</template>
+					</div>
+				</template>
+			</div>
+		</section>
+	</div>
+	<div id="htmx-script-dump" hidden></div>
+}
+
+templ IngredientUsageRowA() {
+	<div class="columns">
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Ingredient</label>
+				<div class="control">
+					<input
+						class="input"
+						type="text"
+						:value="usage.ingredient.ingredient.name"
+						disabled
+					/>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Amount</label>
+				<div class="field has-addons">
+					<p class="control is-expanded">
+						<input
+							class="input"
+							type="text"
+							disabled
+							:value="(usage.quantity * usage.unit.factor).toFixed(2)"
+						/>
+					</p>
+					<p class="control">
+						<a class="button is-static" x-text="usage.unit.name"></a>
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Cost</label>
+				<div class="field has-addons">
+					<p class="control is-expanded">
+						<input
+							class="input"
+							type="text"
+							:value="(usage.ingredient.prices[0].price * usage.quantity).toFixed(2)"
+							disabled
+						/>
+					</p>
+					<p class="control">
+						<a class="button is-static">€</a>
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class="responsive-buttons column">
+			<button
+				class="button is-link"
+				@click="startEditing(usage)"
+			>Edit</button>
+		</div>
+	</div>
+}
+
+templ IngredientUsageRowEditA() {
+	<div class="columns">
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Ingredient</label>
+				<div class="control">
+					<input
+						class="input"
+						type="text"
+						:value="usage.ingredient.ingredient.name"
+						disabled
+					/>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Amount</label>
+				<div class="field has-addons">
+					<p class="control is-expanded">
+						<input
+							class="input is-fullwidth"
+							type="text"
+							:form="`ingredient-usage-form-${usage.id}`"
+							:value="(usage.quantity * usage.unit.factor).toFixed(2)"
+							@input="usage.quantity = parseFloat($event.target.value) / usage.unit.factor"
+							name="amount"
+						/>
+					</p>
+					<p class="control">
+						<span class="select">
+							<select
+								:form="`ingredient-usage-form-${usage.id}`"
+								name="unit"
+							>
+								<template x-for="unit in getFilteredUnitsForUnitId(usage.unit_id)" :key="unit.id">
+									<option :value="unit.id" x-text="unit.name" :selected="unit.id === usage.unit_id"></option>
+								</template>
+							</select>
+						</span>
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Cost</label>
+				<div class="field has-addons">
+					<p class="control is-expanded">
+						<input
+							class="input"
+							type="text"
+							:value="(usage.ingredient.prices[0].price * usage.quantity).toFixed(2)"
+							disabled
+						/>
+					</p>
+					<p class="control">
+						<a class="button is-static">€</a>
+					</p>
+				</div>
+			</div>
+		</div>
+		<form
+			class="responsive-buttons form column"
+			:id="`ingredient-usage-form-${usage.id}`"
+			hx-swap="none"
+			hx-on::after-request="alert('Ingredient usage updated')"
+			:hx-post="`/ingredient-usage/${usage.id}`"
+		>
+			<button
+				type="submit"
+				class="button"
+			>Safe</button>
+			<button
+				class="button"
+				@click="cancelEditing(usage)"
+			>Cancel</button>
+			<button
+				class="button"
+				hx-target="closest .block"
+				hx-swap="outerHTML"
+			>Delete</button>
+		</form>
+	</div>
+}
+
+templ NewIngredientUsage(usage db.IngredientUsage) {
+	@templ.JSONScript("new-ingredient-usage", usage)
+	<script>
+		console.log('New ingredient usage:', JSON.parse(document.getElementById('new-ingredient-usage').textContent));
+		window.dispatchEvent(new CustomEvent("ingredient-added", {
+			detail: {
+				ingredientUsage: JSON.parse(document.getElementById('new-ingredient-usage').textContent),
+			},
+		}))
+		const htmxScriptDump = document.getElementById('htmx-script-dump');
+		htmxScriptDump.innerHTML = "";
+	</script>
+}

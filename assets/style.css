@@ -1,11 +1,51 @@
-.product-row>.block:first-child label.is-hidden-tablet.product-label {
+.product-row .block:first-of-type label.is-hidden-tablet.product-label {
     display: block !important;
 }
+
+.is-first label.is-hidden-tablet.product-label {
+    display: block !important;
+}
+
 
 .modal {
     --bulma-modal-content-width: 60rem;
 }
 
-[x-cloak] {
-    display: none !important;
+.column {
+    min-width: 0;
+}
+
+.responsive-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-end;
+}
+
+.responsive-buttons>.button {
+    display: block;
+    flex: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 100%;
+}
+
+/* For tablet and larger screens (≥ 769px), display buttons in a row */
+@media screen and (min-width: 769px) {
+    .responsive-buttons {
+        flex-direction: row;
+    }
+}
+
+:root {
+    --bulma-block-spacing: .75rem;
+}
+
+.product-row>.block:not(:last-child)>.columns {
+    border-bottom: 1px solid var(--bulma-hr-background-color);
+}
+
+.columns.border {
+    border-bottom: 1px solid var(--bulma-hr-background-color);
 }

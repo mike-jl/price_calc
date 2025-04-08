@@ -71,19 +71,19 @@ templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap,
 				class="column"
 				id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) }
 			>
-				if len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil {
-					<div class="control is-expanded">
-						<div class="select is-fullwidth">
-							<select disabled>
-								<option>
-									{ products[*ingredient.Prices[0].BaseProductID] }
-								</option>
-							</select>
+				<div class="field">
+					<label class="label is-hidden-tablet product-label">Price / Base Product</label>
+					if len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil {
+						<div class="control is-expanded">
+							<div class="select is-fullwidth">
+								<select disabled>
+									<option>
+										{ products[*ingredient.Prices[0].BaseProductID] }
+									</option>
+								</select>
+							</div>
 						</div>
-					</div>
-				} else {
-					<div class="field">
-						<label class="label is-hidden-tablet product-label">Price / Base Product</label>
+					} else {
 						<div class="field has-addons">
 							<p class="control is-expanded">
 								<input
@@ -101,8 +101,8 @@ templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap,
 								<a class="button is-static">€</a>
 							</p>
 						</div>
-					</div>
-				}
+					}
+				</div>
 			</div>
 			<div class="column">
 				<div class="field">
@@ -128,7 +128,7 @@ templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap,
 					</div>
 				</div>
 			</div>
-			<div class="column">
+			<div class="column responsive-buttons">
 				<button
 					class="button"
 					hx-get={ fmt.Sprintf("/ingredient/%d/edit", ingredient.Ingredient.ID) }
@@ -282,6 +282,7 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 			<div class="column">
 				<form
 					id={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
+					class="responsive-buttons"
 				>
 					<button
 						type="submit"
@@ -291,6 +292,14 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 						hx-swap="outerHTML"
 					>
 						Safe
+					</button>
+					<button
+						class="button"
+						hx-get={ fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID) }
+						hx-target="closest .block"
+						hx-swap="outerHTML"
+					>
+						Cancel
 					</button>
 					<button
 						class="button is-danger"

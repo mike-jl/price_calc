@@ -1,22 +1,11 @@
 package db
 
 type IngredientWithPrices struct {
-	Ingredient Ingredient
-	Prices     []IngredientPrice
-}
-
-type IngredientUsageWithPrice struct {
-	Ingredient      Ingredient
-	IngredientUsage IngredientUsage
-	IngredientPrice IngredientPrice
-}
-
-type ProductWithIngredient struct {
-	Product                  Product
-	IngredientUsageWithPrice []IngredientUsageWithPrice
+	Ingredient Ingredient        `json:"ingredient"`
+	Prices     []IngredientPrice `json:"prices"`
 }
 
 type ProductWithCost struct {
-	Product Product
-	Cost    float64
+	Product Product `json:"product"`
+	Cost    float64 `json:"cost"`
 }

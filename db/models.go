@@ -5,50 +5,50 @@
 package db
 
 type Category struct {
-	ID   int64
-	Name string
-	Vat  int64
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Vat  int64  `json:"vat"`
 }
 
 type Ingredient struct {
-	ID   int64
-	Name string
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 type IngredientPrice struct {
-	ID            int64
-	TimeStamp     int64
-	Price         *float64
-	Quantity      float64
-	UnitID        int64
-	IngredientID  int64
-	BaseProductID *int64
+	ID            int64    `json:"id"`
+	TimeStamp     int64    `json:"time_stamp"`
+	Price         *float64 `json:"price"`
+	Quantity      float64  `json:"quantity"`
+	UnitID        int64    `json:"unit_id"`
+	IngredientID  int64    `json:"ingredient_id"`
+	BaseProductID *int64   `json:"base_product_id"`
 }
 
 type IngredientUsage struct {
-	ID           int64
-	Quantity     float64
-	UnitID       int64
-	IngredientID int64
-	ProductID    int64
+	ID           int64   `json:"id"`
+	Quantity     float64 `json:"quantity"`
+	UnitID       int64   `json:"unit_id"`
+	IngredientID int64   `json:"ingredient_id"`
+	ProductID    int64   `json:"product_id"`
 }
 
 type Product struct {
-	ID            int64
-	Name          string
-	Price         float64
-	Multiplicator float64
-	CategoryID    int64
+	ID            int64   `json:"id"`
+	Name          string  `json:"name"`
+	Price         float64 `json:"price"`
+	Multiplicator float64 `json:"multiplicator"`
+	CategoryID    int64   `json:"category_id"`
 }
 
 type ProductCostCache struct {
-	ProductID int64
-	Cost      float64
+	ProductID int64   `json:"product_id"`
+	Cost      float64 `json:"cost"`
 }
 
 type Unit struct {
-	ID         int64
-	Name       string
-	BaseUnitID *int64
-	Factor     float64
+	ID         int64   `json:"id"`
+	Name       string  `json:"name"`
+	BaseUnitID *int64  `json:"base_unit_id"`
+	Factor     float64 `json:"factor"`
 }

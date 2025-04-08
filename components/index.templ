@@ -12,7 +12,6 @@ templ Index(content templ.Component) {
 			<link rel="stylesheet" href="/bulma-responsive-tables/css/main.min.css"/>
 			<link rel="stylesheet" href="/style.css"/>
 			<script src="/htmx.min.js"></script>
-			<script defer src="/alpine.min.js"></script>
 			<script src="/script.js"></script>
 			<title>Price Calculator</title>
 			<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
@@ -57,6 +56,7 @@ templ Index(content templ.Component) {
 				</div>
 			</nav>
 			@content
+			<script defer src="/alpine.min.js"></script>
 		</body>
 	</html>
 }

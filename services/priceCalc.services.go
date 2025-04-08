@@ -90,12 +90,8 @@ func NewPriceCalcService(log *slog.Logger, dbName string) (*PriceCalcService, er
 
 func (pc *PriceCalcService) CheckCircularDependency(
 	productId, ingredientId int64,
-	c ...context.Context,
+	ctx context.Context,
 ) (bool, error) {
-	ctx := context.Background()
-	if len(c) > 0 {
-		ctx = c[0]
-	}
 	return pc.checkCircular(productId, ingredientId, make(map[int64]bool), ctx)
 }
 
@@ -116,6 +112,11 @@ func (pc *PriceCalcService) checkCircular(
 			Limit: 1,
 		},
 	)
+
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+
 	if err != nil {
 		return false, err
 	}
@@ -496,58 +497,6 @@ func (pc *PriceCalcService) DeleteIngredient(ingredientId int64) error {
 	return nil
 }
 
-func (pc *PriceCalcService) GetProductsWithIngredients() ([]db.ProductWithIngredient, error) {
-	ctx := context.Background()
-	products, err := pc.queries.GetProductsWithIngredients(ctx)
-	if err != nil {
-		return nil, err
-	}
-	out := []db.ProductWithIngredient{}
-	for _, product := range products {
-		var ingredient *db.IngredientUsageWithPrice = nil
-		if product.ID_2 != nil {
-			ingredient = &db.IngredientUsageWithPrice{
-				IngredientUsage: db.IngredientUsage{
-					ID:           *product.ID_2,
-					Quantity:     *product.Quantity,
-					UnitID:       *product.UnitID,
-					IngredientID: *product.IngredientID,
-					ProductID:    *product.ProductID,
-				},
-				Ingredient: db.Ingredient{
-					ID:   *product.ID_3,
-					Name: *product.Name_2,
-				},
-				IngredientPrice: db.IngredientPrice{
-					ID:           *product.ID_4,
-					TimeStamp:    *product.TimeStamp,
-					Price:        &product.Price,
-					Quantity:     *product.Quantity_2,
-					UnitID:       *product.UnitID_2,
-					IngredientID: *product.IngredientID_2,
-				},
-			}
-		}
-		i := slices.IndexFunc(out, func(ip db.ProductWithIngredient) bool {
-			return product.ID == ip.Product.ID
-		})
-		if i == -1 {
-			out = append(out, db.ProductWithIngredient{
-				Product: db.Product{
-					ID:         product.ID,
-					Name:       product.Name,
-					CategoryID: product.CategoryID,
-				},
-			})
-			i = len(out) - 1
-		}
-		if ingredient != nil {
-			out[i].IngredientUsageWithPrice = append(out[i].IngredientUsageWithPrice, *ingredient)
-		}
-	}
-	return out, nil
-}
-
 func (pc *PriceCalcService) GetProductsWithCost() ([]db.ProductWithCost, error) {
 	ctx := context.Background()
 	products, err := pc.queries.GetProductsWithCost(ctx)
@@ -749,8 +698,8 @@ func (pc *PriceCalcService) PutIngredientUsage(
 func (pc *PriceCalcService) UpdateIngredientUsage(
 	ingredientUsageId, unitId int64,
 	quantity float64,
+	ctx context.Context,
 ) (*db.IngredientUsage, error) {
-	ctx := context.Background()
 	baseQuantity := quantity / pc.Units[unitId].Factor
 	ingredientUsage, err := pc.queries.UpdateIngredientUsage(ctx, db.UpdateIngredientUsageParams{
 		ID:       ingredientUsageId,

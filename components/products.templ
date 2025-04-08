@@ -112,16 +112,14 @@ templ ProductRow(product db.ProductWithCost, categories []db.Category) {
 					</div>
 				</div>
 			</div>
-			<div class="column is-3">
-				<button
+			<div class="column  responsive-buttons">
+				<a
 					id="product-modal-button"
 					class="button is-link"
-					hx-get={ fmt.Sprintf("/product/%d/edit", product.Product.ID) }
-					hx-target="closest .block"
-					hx-swap="outerHTML"
+					href={ templ.URL(fmt.Sprintf("/product/%d/edit", product.Product.ID)) }
 				>
 					Edit
-				</button>
+				</a>
 			</div>
 		</div>
 	</div>
@@ -223,12 +221,13 @@ templ ProductRowEdit(product db.ProductWithCost, categories []db.Category, ingre
 					</div>
 				</div>
 			</div>
-			<div class="column is-3">
+			<div class="column">
 				<form
 					id={ fmt.Sprintf("product-edit-form-%d", product.Product.ID) }
 					hx-post={ fmt.Sprintf("/product/%d", product.Product.ID) }
 					hx-target="closest .block"
 					hx-swap="outerHTML"
+					class="responsive-buttons"
 				>
 					<button
 						id="product-modal-button"
@@ -254,7 +253,7 @@ templ ProductRowEdit(product db.ProductWithCost, categories []db.Category, ingre
 			hx-on::after-request="refreshProductCost(this)"
 		>
 			<div class="columns">
-				<div class="column is-narrow">
+				<div class="column">
 					<div class="field">
 						<label class="label">Cost</label>
 						<div class="field has-addons">
@@ -273,7 +272,7 @@ templ ProductRowEdit(product db.ProductWithCost, categories []db.Category, ingre
 						</div>
 					</div>
 				</div>
-				<div class="column is-narrow">
+				<div class="column">
 					<div class="field">
 						<label class="label">Multiplicator</label>
 						<div class="field has-addons">
@@ -292,7 +291,7 @@ templ ProductRowEdit(product db.ProductWithCost, categories []db.Category, ingre
 						</div>
 					</div>
 				</div>
-				<div class="column is-narrow">
+				<div class="column">
 					<div class="field">
 						<label class="label">Net Price (calculated)</label>
 						<div class="field has-addons">
@@ -398,6 +397,7 @@ templ ProductRowEdit(product db.ProductWithCost, categories []db.Category, ingre
 						hx-put={ fmt.Sprintf("/ingredient-usage/%d", product.Product.ID) }
 						hx-swap="beforebegin"
 						hx-target={ fmt.Sprintf("#ingredient-usage-table-end-%d", product.Product.ID) }
+						class="responsive-buttons"
 					>
 						<button class="button" type="submit">Add</button>
 					</form>
@@ -406,7 +406,6 @@ templ ProductRowEdit(product db.ProductWithCost, categories []db.Category, ingre
 			<hr class="is-hidden-tablet"/>
 			for _, ingredientUsage := range(ingredientUsages) {
 				@IngredientUsageRow(ingredientUsage, getIngredientFromId(ingredientUsage.IngredientID, ingredients), units[ingredientUsage.UnitID])
-				<hr class="is-hidden-tablet"/>
 			}
 			<div
 				id={ fmt.Sprintf("ingredient-usage-table-end-%d", product.Product.ID) }
@@ -474,7 +473,7 @@ templ IngredientUsageRow(ingredientUsage db.IngredientUsage, ingredient db.Ingre
 			</div>
 		</div>
 		<div class="column">
-			<form>
+			<form class="responsive-buttons">
 				<button
 					class="button"
 					hx-get={ fmt.Sprintf("/ingredient-usage-edit/%d", ingredientUsage.ID) }
@@ -566,6 +565,7 @@ templ IngredientUsageRowEdit(ingredientUsage db.IngredientUsage, ingredient db.I
 				hx-post={ fmt.Sprintf("/ingredient-usage/%d", ingredientUsage.ID) }
 				hx-target="closest .columns"
 				hx-swap="outerHTML"
+				class="responsive-buttons"
 			>
 				<button
 					class="button"

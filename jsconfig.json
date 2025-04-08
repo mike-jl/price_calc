@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "allowJs": true,
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "baseUrl": "./assets",
+        "paths": {
+            "*": [
+                "*"
+            ]
+        },
+        "noEmit": true
+    },
+    "include": [
+        "assets/**/*.js"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

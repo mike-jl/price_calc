@@ -196,7 +196,7 @@ templ ProductEdit(viewModel viewmodels.ProductEditViewModel) {
 											type="text"
 											:form="`ingredient-form-${product.product.id}`"
 											name="amount"
-											x-model.number="newIngredientAmount"
+											x-model="newIngredientAmount"
 										/>
 									</p>
 									<p class="control">
@@ -348,7 +348,7 @@ templ IngredientUsageRowEditA() {
 							class="input is-fullwidth"
 							type="text"
 							:form="`ingredient-usage-form-${usage.id}`"
-							:value="(usage.quantity * usage.unit.factor).toFixed(2)"
+							:value="(usage.quantity * usage.unit.factor)"
 							@input="usage.quantity = parseFloat($event.target.value) / usage.unit.factor"
 							name="amount"
 						/>

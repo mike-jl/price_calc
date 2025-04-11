@@ -1,0 +1,24 @@
+{
+  "name": "pricecalc",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mike-jl/price_calc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mike-jl/price_calc/issues"
+  },
+  "homepage": "https://github.com/mike-jl/price_calc#readme",
+  "description": "",
+  "dependencies": {
+    "typescript": "^5.8.3"
+  }
+}

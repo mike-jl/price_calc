@@ -8,7 +8,7 @@ import (
 templ ProductEdit(viewModel viewmodels.ProductEditViewModel) {
 	@templ.JSONScript("viewModel", viewModel)
 	<script type="module">
-		import { getProductEditData } from '/product_edit.js';
+		import { getProductEditData } from '/js/product_edit.js';
 		document.addEventListener('alpine:init', () => {
 			Alpine.data('productEditData', getProductEditData);
 		});

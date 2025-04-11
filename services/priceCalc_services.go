@@ -23,7 +23,6 @@ type PriceCalcService struct {
 	queries *db.Queries
 	db      *sql.DB
 	logger  *slog.Logger
-	Units   UnitsMap
 
 	baseProductPriceResolver baseProductPriceResolver
 }
@@ -80,22 +79,10 @@ func NewPriceCalcService(log *slog.Logger, dbName string) (*PriceCalcService, er
 
 	queries := db.New(sql)
 
-	// get units, needs to be done only once
-	units, err := queries.GetUnits(ctx)
-	if err != nil {
-		log.Error("error getting units " + err.Error())
-	}
-
-	unitsMap := UnitsMap{}
-	for _, unit := range units {
-		unitsMap[unit.ID] = unit
-	}
-
 	service := PriceCalcService{
 		queries: queries,
 		db:      sql,
 		logger:  log,
-		Units:   unitsMap,
 	}
 
 	service.baseProductPriceResolver = &service
@@ -378,6 +365,99 @@ func (pc *PriceCalcService) PutIngredient(name string) (*db.Ingredient, error) {
 	return &ingredient, nil
 }
 
+func (pc *PriceCalcService) syncIngredientName(
+	ctx context.Context,
+	qtx *db.Queries,
+	row *db.GetIngredientsWithPriceUnitRow,
+	name string,
+) error {
+	if row.Name != name {
+		var ingredient db.Ingredient
+		ingredient, err := qtx.UpdateIngredient(ctx, db.UpdateIngredientParams{
+			ID:   row.ID,
+			Name: name,
+		})
+		if err != nil {
+			return err
+		}
+
+		row.Name = ingredient.Name
+	}
+
+	return nil
+}
+
+type syncIngredientPriceQtx interface {
+	PutIngredientPrice(
+		ctx context.Context,
+		arg db.PutIngredientPriceParams,
+	) (db.IngredientPrice, error)
+	GetUnit(ctx context.Context, unitID int64) (db.Unit, error)
+}
+
+func (pc *PriceCalcService) syncIngredientPrice(
+	ctx context.Context,
+	qtx syncIngredientPriceQtx,
+	row *db.GetIngredientsWithPriceUnitRow,
+	params UpdateIngredientParams,
+) error {
+	unit, err := qtx.GetUnit(ctx, params.UnitID)
+	if err != nil {
+		return err
+	}
+
+	if params.Price == nil && params.BaseProductID == nil ||
+		params.Price != nil && params.BaseProductID != nil {
+		return errors.New("either price or baseProductId must be set but not both")
+	}
+
+	baseUnitQuantity := params.Quantity / unit.Factor
+	var baseUnitPrice *float64 = nil
+	if params.Price != nil {
+		baseUnitPrice = utils.Ptr(*params.Price / baseUnitQuantity)
+	}
+
+	var ingredientPrice db.IngredientPrice
+	if row.PriceID == nil ||
+		!utils.PtrsEqual(row.Price, baseUnitPrice) ||
+		!utils.PtrsEqual(row.BaseProductID, params.BaseProductID) ||
+		*row.Quantity != params.Quantity ||
+		*row.UnitID != params.UnitID {
+
+		pc.logger.Debug(
+			"update ingredient price",
+			"baseUnitPrice",
+			baseUnitPrice,
+			"BaseProductID",
+			params.BaseProductID,
+			"old price",
+			row.Price,
+		)
+
+		ingredientPrice, err = qtx.PutIngredientPrice(
+			ctx,
+			db.PutIngredientPriceParams{
+				IngredientID:  params.ID,
+				Price:         baseUnitPrice,
+				BaseProductID: params.BaseProductID,
+				Quantity:      params.Quantity,
+				UnitID:        params.UnitID,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		row.PriceID = &ingredientPrice.ID
+		row.TimeStamp = &ingredientPrice.TimeStamp
+		row.Price = ingredientPrice.Price
+		row.Quantity = &ingredientPrice.Quantity
+		row.UnitID = &ingredientPrice.UnitID
+	}
+
+	return nil
+}
+
 type UpdateIngredientParams struct {
 	ID            int64
 	Name          string
@@ -416,72 +496,14 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 
 	ingredientWithPriceRow := ingredientWithPriceRows[0]
 
-	if ingredientWithPriceRow.Name != params.Name {
-		var ingredient db.Ingredient
-		ingredient, err = qtx.UpdateIngredient(ctx, db.UpdateIngredientParams{
-			ID:   params.ID,
-			Name: params.Name,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		ingredientWithPriceRow.Name = ingredient.Name
+	err = pc.syncIngredientName(ctx, qtx, &ingredientWithPriceRow, params.Name)
+	if err != nil {
+		return nil, err
 	}
 
-	unit, ok := pc.Units[params.UnitID]
-	if !ok {
-		return nil, errors.New("unit not found")
-	}
-
-	if params.Price == nil && params.BaseProductID == nil ||
-		params.Price != nil && params.BaseProductID != nil {
-		return nil, errors.New("either price or baseProductId must be set but not both")
-	}
-
-	baseUnitQuantity := params.Quantity / unit.Factor
-	var baseUnitPrice *float64 = nil
-	if params.Price != nil {
-		baseUnitPrice = new(float64)
-		*baseUnitPrice = *params.Price / baseUnitQuantity
-	}
-
-	var ingredientPrice db.IngredientPrice
-	if ingredientWithPriceRow.PriceID == nil ||
-		ingredientWithPriceRow.Price != baseUnitPrice ||
-		(ingredientWithPriceRow.Price != nil && baseUnitPrice != nil && *ingredientWithPriceRow.Price != *baseUnitPrice) ||
-		ingredientWithPriceRow.BaseProductID != params.BaseProductID ||
-		(ingredientWithPriceRow.BaseProductID != nil && params.BaseProductID != nil && *ingredientWithPriceRow.BaseProductID != *params.BaseProductID) ||
-		*ingredientWithPriceRow.Quantity != params.Quantity ||
-		*ingredientWithPriceRow.UnitID != params.UnitID {
-
-		pc.logger.Debug(
-			"update ingredient price",
-			"ingredientID",
-			baseUnitPrice,
-			"BaseProductID",
-			params.BaseProductID,
-		)
-
-		ingredientPrice, err = qtx.PutIngredientPrice(
-			ctx,
-			db.PutIngredientPriceParams{
-				IngredientID:  params.ID,
-				Price:         baseUnitPrice,
-				BaseProductID: params.BaseProductID,
-				Quantity:      params.Quantity,
-				UnitID:        params.UnitID,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		ingredientWithPriceRow.PriceID = &ingredientPrice.ID
-		ingredientWithPriceRow.TimeStamp = &ingredientPrice.TimeStamp
-		ingredientWithPriceRow.Price = ingredientPrice.Price
-		ingredientWithPriceRow.Quantity = &ingredientPrice.Quantity
-		ingredientWithPriceRow.UnitID = &ingredientPrice.UnitID
+	err = pc.syncIngredientPrice(ctx, qtx, &ingredientWithPriceRow, params)
+	if err != nil {
+		return nil, err
 	}
 
 	// find all products that use this ingredient
@@ -504,7 +526,6 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 		return nil, err
 	}
 
-	// out := pc.parseIngredientWithPriceUnitRow(ingredientWithPriceRow)
 	out, err := pc.parseIngredientsWithPriceUnitRow(
 		[]db.GetIngredientsWithPriceUnitRow{
 			db.GetIngredientsWithPriceUnitRow(ingredientWithPriceRow),
@@ -518,13 +539,33 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 	return &out[0], nil
 }
 
-func (pc *PriceCalcService) GetUnits() ([]db.Unit, error) {
-	ctx := context.Background()
+func (pc *PriceCalcService) GetUnits(ctx context.Context) ([]db.Unit, error) {
 	units, err := pc.queries.GetUnits(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return units, err
+}
+
+func (pc *PriceCalcService) GetUnitsMap(ctx context.Context) (UnitsMap, error) {
+	units, err := pc.GetUnits(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := UnitsMap{}
+	for _, unit := range units {
+		out[unit.ID] = unit
+	}
+	return out, nil
+}
+
+func (pc *PriceCalcService) GetUnit(unitId int64) (*db.Unit, error) {
+	ctx := context.Background()
+	unit, err := pc.queries.GetUnit(ctx, unitId)
+	if err != nil {
+		return nil, err
+	}
+	return &unit, nil
 }
 
 func (pc *PriceCalcService) DeleteIngredient(ingredientId int64) error {
@@ -720,7 +761,19 @@ func (pc *PriceCalcService) PutIngredientUsage(
 	if len(c) > 0 {
 		ctx = c[0]
 	}
-	baseQuantity := quantity / pc.Units[unitId].Factor
+
+	units, err := pc.queries.GetUnits(ctx)
+	if err != nil {
+		return nil, err
+	}
+	unit, ok := utils.First(units, func(u db.Unit) bool {
+		return u.ID == unitId
+	})
+	if !ok {
+		return nil, fmt.Errorf("unit with id %d not found", unitId)
+	}
+
+	baseQuantity := quantity / unit.Factor
 	ingredientUsage, err := pc.queries.PutIngredeintUsage(ctx, db.PutIngredeintUsageParams{
 		IngredientID: ingredientId,
 		ProductID:    productId,
@@ -742,7 +795,18 @@ func (pc *PriceCalcService) UpdateIngredientUsage(
 	quantity float64,
 	ctx context.Context,
 ) (*db.IngredientUsage, error) {
-	baseQuantity := quantity / pc.Units[unitId].Factor
+	units, err := pc.queries.GetUnits(ctx)
+	if err != nil {
+		return nil, err
+	}
+	unit, ok := utils.First(units, func(u db.Unit) bool {
+		return u.ID == unitId
+	})
+
+	if !ok {
+		return nil, fmt.Errorf("unit with id %d not found", unitId)
+	}
+	baseQuantity := quantity / unit.Factor
 	ingredientUsage, err := pc.queries.UpdateIngredientUsage(ctx, db.UpdateIngredientUsageParams{
 		ID:       ingredientUsageId,
 		UnitID:   unitId,
@@ -806,14 +870,6 @@ func (pc *PriceCalcService) InsertUnit(
 		BaseUnitID: baseUnitId,
 		Factor:     factor,
 	})
-	if err != nil {
-		return nil, err
-	}
-	return &unit, nil
-}
-
-func (pc *PriceCalcService) GetUnit(id int64, ctx context.Context) (*db.Unit, error) {
-	unit, err := pc.queries.GetUnit(ctx, id)
 	if err != nil {
 		return nil, err
 	}

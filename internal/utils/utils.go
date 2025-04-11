@@ -35,3 +35,7 @@ func AppendAndGetPtr[T any](slice *[]T, value T) *T {
 	*slice = append(*slice, value)
 	return &(*slice)[len(*slice)-1]
 }
+
+func PtrsEqual[T comparable](a, b *T) bool {
+	return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
+}

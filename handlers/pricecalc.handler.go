@@ -48,10 +48,16 @@ func (ph *PriceCalcHandler) index(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
 
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
 	return render(
 		c,
 		http.StatusOK,
-		components.Index(components.IngredientsTable(ingredients, ph.service.Units, products)),
+		components.Index(components.IngredientsTable(ingredients, units, products)),
 	)
 }
 
@@ -73,10 +79,17 @@ func (ph *PriceCalcHandler) putIngredient(c echo.Context) error {
 		ph.log.Error(err.Error())
 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
+
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
 	return render(
 		c,
 		http.StatusCreated,
-		components.IngredientRow(ingredientWithPrice, ph.service.Units, products),
+		components.IngredientRow(ingredientWithPrice, units, products),
 	)
 }
 
@@ -143,10 +156,16 @@ func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
 
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
 	return render(
 		c,
 		http.StatusCreated,
-		components.IngredientRow(*ingredientWithPrice, ph.service.Units, products),
+		components.IngredientRow(*ingredientWithPrice, units, products),
 	)
 }
 
@@ -168,10 +187,16 @@ func (ph *PriceCalcHandler) getIngredientEdit(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
 
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
 	return render(
 		c,
 		http.StatusOK,
-		components.IngredientRowEdit(*ingredient, ph.service.Units, products),
+		components.IngredientRowEdit(*ingredient, units, products),
 	)
 }
 
@@ -192,10 +217,16 @@ func (ph *PriceCalcHandler) getIngredient(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
 
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
 	return render(
 		c,
 		http.StatusOK,
-		components.IngredientRow(*ingredient, ph.service.Units, products),
+		components.IngredientRow(*ingredient, units, products),
 	)
 }
 
@@ -352,7 +383,7 @@ func (ph *PriceCalcHandler) getProductEditPage(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get ingredients "+err.Error())
 	}
 
-	units, err := ph.service.GetUnits()
+	units, err := ph.service.GetUnits(c.Request().Context())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
 	}
@@ -434,12 +465,19 @@ func (ph *PriceCalcHandler) getUnitListFiltered(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
 	}
 	baseUnitID := unitId
-	if ph.service.Units[unitId].BaseUnitID != nil {
-		baseUnitID = *ph.service.Units[unitId].BaseUnitID
+
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
+	if units[unitId].BaseUnitID != nil {
+		baseUnitID = *units[unitId].BaseUnitID
 	}
 	filteredUnits := []db.Unit{}
-	filteredUnits = append(filteredUnits, ph.service.Units[baseUnitID])
-	for _, unit := range ph.service.Units {
+	filteredUnits = append(filteredUnits, units[baseUnitID])
+	for _, unit := range units {
 		if unit.BaseUnitID != nil && *unit.BaseUnitID == baseUnitID {
 			filteredUnits = append(filteredUnits, unit)
 		}
@@ -480,7 +518,13 @@ func (ph *PriceCalcHandler) putIngredientUsage(c echo.Context) error {
 		)
 	}
 
-	baseQuantity := quantity / ph.service.Units[unitId].Factor
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
+	baseQuantity := quantity / units[unitId].Factor
 	ingredientUsage, err := ph.service.PutIngredientUsage(
 		ingredientId,
 		productId,
@@ -526,14 +570,21 @@ func (ph *PriceCalcHandler) getIngredientUsageEdit(c echo.Context) error {
 	}
 
 	baseUnitID := ingredient.Prices[0].UnitID
-	if ph.service.Units[baseUnitID].BaseUnitID != nil {
-		baseUnitID = *ph.service.Units[baseUnitID].BaseUnitID
+
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	if err != nil {
+		ph.log.Error(err.Error())
+		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
+	if units[baseUnitID].BaseUnitID != nil {
+		baseUnitID = *units[baseUnitID].BaseUnitID
 	}
 	filteredUnits := services.UnitsMap{}
 
 	// filteredUnits = append(filteredUnits, ph.service.Units[baseUnitID])
-	filteredUnits[baseUnitID] = ph.service.Units[baseUnitID]
-	for id, unit := range ph.service.Units {
+	filteredUnits[baseUnitID] = units[baseUnitID]
+	for id, unit := range units {
 		if unit.BaseUnitID != nil && *unit.BaseUnitID == baseUnitID {
 			// filteredUnits = append(filteredUnits, unit)
 			filteredUnits[id] = unit
@@ -593,7 +644,7 @@ func (ph *PriceCalcHandler) deleteIngredientUsage(c echo.Context) error {
 }
 
 func (ph *PriceCalcHandler) getUnits(c echo.Context) error {
-	units, err := ph.service.GetUnits()
+	units, err := ph.service.GetUnits(c.Request().Context())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
 	}
@@ -633,7 +684,7 @@ func (ph *PriceCalcHandler) putUnit(c echo.Context) error {
 
 	var baseUnit *db.Unit = nil
 	if baseUnitId != 0 {
-		units, err := ph.service.GetUnits()
+		units, err := ph.service.GetUnits(c.Request().Context())
 		if err != nil {
 			return c.String(http.StatusInternalServerError, "could not get base unit "+err.Error())
 		}
@@ -653,7 +704,7 @@ func (ph *PriceCalcHandler) getUnitEdit(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
 	}
 
-	units, err := ph.service.GetUnits()
+	units, err := ph.service.GetUnits(c.Request().Context())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
 	}
@@ -702,7 +753,7 @@ func (ph *PriceCalcHandler) postUnit(c echo.Context) error {
 		baseUnitIdPtr = &baseUnitId
 	}
 
-	units, err := ph.service.GetUnits()
+	units, err := ph.service.GetUnits(c.Request().Context())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
 	}

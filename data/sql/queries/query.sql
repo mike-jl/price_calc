@@ -15,30 +15,9 @@ left join
         from ingredient_prices as ip2
         where ip2.ingredient_id = i.id
         order by time_stamp desc
-        limit ?
+        limit:price_limit
     )
-;
-
--- name: GetIngredientWithPriceUnit :one
-select
-    i.*,
-    ip.id as price_id,
-    ip.price,
-    ip.unit_id,
-    ip.quantity,
-    ip.time_stamp,
-    ip.base_product_id
-from ingredients i
-left join
-    ingredient_prices ip
-    on ip.id = (
-        select id
-        from ingredient_prices as ip2
-        where ip2.ingredient_id = i.id
-        order by time_stamp desc
-        limit ?
-    )
-where i.id = ?
+where (:ingredient_id is null or id =:ingredient_id)
 ;
 
 -- name: PutIngredient :one

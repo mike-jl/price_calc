@@ -260,62 +260,6 @@ func (q *Queries) GetIngredientUsageForProductWithPrice(ctx context.Context, pro
 	return items, nil
 }
 
-const getIngredientWithPriceUnit = `-- name: GetIngredientWithPriceUnit :one
-;
-
-select
-    i.id, i.name,
-    ip.id as price_id,
-    ip.price,
-    ip.unit_id,
-    ip.quantity,
-    ip.time_stamp,
-    ip.base_product_id
-from ingredients i
-left join
-    ingredient_prices ip
-    on ip.id = (
-        select id
-        from ingredient_prices as ip2
-        where ip2.ingredient_id = i.id
-        order by time_stamp desc
-        limit ?
-    )
-where i.id = ?
-`
-
-type GetIngredientWithPriceUnitParams struct {
-	Limit int64 `json:"limit"`
-	ID    int64 `json:"id"`
-}
-
-type GetIngredientWithPriceUnitRow struct {
-	ID            int64    `json:"id"`
-	Name          string   `json:"name"`
-	PriceID       *int64   `json:"price_id"`
-	Price         *float64 `json:"price"`
-	UnitID        *int64   `json:"unit_id"`
-	Quantity      *float64 `json:"quantity"`
-	TimeStamp     *int64   `json:"time_stamp"`
-	BaseProductID *int64   `json:"base_product_id"`
-}
-
-func (q *Queries) GetIngredientWithPriceUnit(ctx context.Context, arg GetIngredientWithPriceUnitParams) (GetIngredientWithPriceUnitRow, error) {
-	row := q.db.QueryRowContext(ctx, getIngredientWithPriceUnit, arg.Limit, arg.ID)
-	var i GetIngredientWithPriceUnitRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.PriceID,
-		&i.Price,
-		&i.UnitID,
-		&i.Quantity,
-		&i.TimeStamp,
-		&i.BaseProductID,
-	)
-	return i, err
-}
-
 const getIngredientsFromUnit = `-- name: GetIngredientsFromUnit :many
 ;
 
@@ -365,9 +309,15 @@ left join
         from ingredient_prices as ip2
         where ip2.ingredient_id = i.id
         order by time_stamp desc
-        limit ?
+        limit?1
     )
+where (?2 is null or id =?2)
 `
+
+type GetIngredientsWithPriceUnitParams struct {
+	PriceLimit   int64       `json:"price_limit"`
+	IngredientID interface{} `json:"ingredient_id"`
+}
 
 type GetIngredientsWithPriceUnitRow struct {
 	ID            int64    `json:"id"`
@@ -380,8 +330,8 @@ type GetIngredientsWithPriceUnitRow struct {
 	BaseProductID *int64   `json:"base_product_id"`
 }
 
-func (q *Queries) GetIngredientsWithPriceUnit(ctx context.Context, limit int64) ([]GetIngredientsWithPriceUnitRow, error) {
-	rows, err := q.db.QueryContext(ctx, getIngredientsWithPriceUnit, limit)
+func (q *Queries) GetIngredientsWithPriceUnit(ctx context.Context, arg GetIngredientsWithPriceUnitParams) ([]GetIngredientsWithPriceUnitRow, error) {
+	rows, err := q.db.QueryContext(ctx, getIngredientsWithPriceUnit, arg.PriceLimit, arg.IngredientID)
 	if err != nil {
 		return nil, err
 	}

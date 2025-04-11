@@ -120,17 +120,19 @@ func (pc *PriceCalcService) checkCircular(
 	}
 	visited[currentIngredientId] = true
 
-	ingredient, err := pc.queries.GetIngredientWithPriceUnit(
+	ingredients, err := pc.queries.GetIngredientsWithPriceUnit(
 		ctx,
-		db.GetIngredientWithPriceUnitParams{
-			ID:    currentIngredientId,
-			Limit: 1,
+		db.GetIngredientsWithPriceUnitParams{
+			IngredientID: currentIngredientId,
+			PriceLimit:   1,
 		},
 	)
 
 	if err == sql.ErrNoRows {
 		return false, nil
 	}
+
+	ingredient := ingredients[0]
 
 	if err != nil {
 		return false, err
@@ -314,7 +316,13 @@ func (pc *PriceCalcService) GetIngredientsWithPrices(
 	if len(ctx) > 0 {
 		c = ctx[0]
 	}
-	ingredients, err := pc.queries.GetIngredientsWithPriceUnit(c, priceLimit)
+	ingredients, err := pc.queries.GetIngredientsWithPriceUnit(
+		c,
+		db.GetIngredientsWithPriceUnitParams{
+			IngredientID: nil,
+			PriceLimit:   priceLimit,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -337,11 +345,13 @@ func (pc *PriceCalcService) GetIngredientWithPrices(
 		c = ctx[0]
 	}
 
-	ingredient, err := pc.queries.GetIngredientWithPriceUnit(
+	ingredient, err := pc.queries.GetIngredientsWithPriceUnit(
 		c,
-		db.GetIngredientWithPriceUnitParams{
-			ID:    ingredientId,
-			Limit: priceLimit,
+		db.GetIngredientsWithPriceUnitParams{
+			// ID:    ingredientId,
+			// Limit: priceLimit,
+			IngredientID: nil,
+			PriceLimit:   priceLimit,
 		},
 	)
 	if err != nil {
@@ -349,7 +359,7 @@ func (pc *PriceCalcService) GetIngredientWithPrices(
 	}
 
 	out, err := pc.parseIngredientsWithPriceUnitRow(
-		[]db.GetIngredientsWithPriceUnitRow{db.GetIngredientsWithPriceUnitRow(ingredient)},
+		ingredient,
 		c,
 	)
 	if err != nil {
@@ -389,16 +399,22 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 
 	qtx := pc.queries.WithTx(tx)
 
-	ingredientWithPriceRow, err := qtx.GetIngredientWithPriceUnit(
+	ingredientWithPriceRows, err := qtx.GetIngredientsWithPriceUnit(
 		ctx,
-		db.GetIngredientWithPriceUnitParams{
-			ID:    params.ID,
-			Limit: 1,
+		db.GetIngredientsWithPriceUnitParams{
+			IngredientID: params.ID,
+			PriceLimit:   1,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	if len(ingredientWithPriceRows) == 0 {
+		return nil, fmt.Errorf("ingredient with id %d not found", params.ID)
+	}
+
+	ingredientWithPriceRow := ingredientWithPriceRows[0]
 
 	if ingredientWithPriceRow.Name != params.Name {
 		var ingredient db.Ingredient

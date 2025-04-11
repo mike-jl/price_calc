@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"github.com/mike-jl/price_calc/db"
-	"github.com/mike-jl/price_calc/services"
+	"github.com/mike-jl/price_calc/internal/utils"
 )
 
 func UnitsTable(units []db.Unit) templ.Component {
@@ -78,7 +78,7 @@ func UnitsTable(units []db.Unit) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		for _, unit := range units {
-			if baseUnit, ok := services.First(units, func(u db.Unit) bool {
+			if baseUnit, ok := utils.First(units, func(u db.Unit) bool {
 				return unit.BaseUnitID != nil && *unit.BaseUnitID == u.ID
 			}); ok {
 				templ_7745c5c3_Err = UnitRow(unit, &baseUnit).Render(ctx, templ_7745c5c3_Buffer)

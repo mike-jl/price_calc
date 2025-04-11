@@ -8,13 +8,13 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"slices"
 
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/database"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mike-jl/price_calc/db"
+	"github.com/mike-jl/price_calc/internal/utils"
 )
 
 type UnitsMap map[int64]db.Unit
@@ -24,6 +24,12 @@ type PriceCalcService struct {
 	db      *sql.DB
 	logger  *slog.Logger
 	Units   UnitsMap
+
+	baseProductPriceResolver baseProductPriceResolver
+}
+
+type baseProductPriceResolver interface {
+	resolveBaseProductPrices([]db.IngredientWithPrices, context.Context) error
 }
 
 var ErrNoRowsAffected = errors.New("no rows affected")
@@ -85,7 +91,16 @@ func NewPriceCalcService(log *slog.Logger, dbName string) (*PriceCalcService, er
 		unitsMap[unit.ID] = unit
 	}
 
-	return &PriceCalcService{queries, sql, log, unitsMap}, nil
+	service := PriceCalcService{
+		queries: queries,
+		db:      sql,
+		logger:  log,
+		Units:   unitsMap,
+	}
+
+	service.baseProductPriceResolver = &service
+
+	return &service, nil
 }
 
 func (pc *PriceCalcService) CheckCircularDependency(
@@ -137,10 +152,26 @@ func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
 ) ([]db.IngredientWithPrices, error) {
 	out := []db.IngredientWithPrices{}
 	for _, ingredientRow := range ingredients {
-		var price *db.IngredientPrice = nil
+
+		var target *db.IngredientWithPrices
+		// check if the ingredient is already in the out struct
+		ing, ok := utils.FirstPtr(out, func(ip db.IngredientWithPrices) bool {
+			return ingredientRow.ID == ip.Ingredient.ID
+		})
+		if ok {
+			target = ing
+		} else {
+			target = utils.AppendAndGetPtr(&out, db.IngredientWithPrices{
+				Ingredient: db.Ingredient{ID: ingredientRow.ID, Name: ingredientRow.Name},
+			})
+		}
+
 		// check if a price is in the row, if so, fill out price struct
-		if ingredientRow.PriceID != nil {
-			price = &db.IngredientPrice{
+		if ingredientRow.PriceID != nil &&
+			ingredientRow.TimeStamp != nil &&
+			ingredientRow.Quantity != nil &&
+			ingredientRow.UnitID != nil {
+			target.Prices = append(target.Prices, db.IngredientPrice{
 				ID:            *ingredientRow.PriceID,
 				TimeStamp:     *ingredientRow.TimeStamp,
 				IngredientID:  ingredientRow.ID,
@@ -148,54 +179,51 @@ func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
 				Quantity:      *ingredientRow.Quantity,
 				UnitID:        *ingredientRow.UnitID,
 				BaseProductID: ingredientRow.BaseProductID,
-			}
+			})
+		} else if ingredientRow.PriceID != nil {
+			return nil, fmt.Errorf("missing fields in ingredient price row: %d", ingredientRow.ID)
 		}
 
-		// check if the ingredeient already exists in the out struct
-		i := slices.IndexFunc(out, func(ip db.IngredientWithPrices) bool {
-			return ingredientRow.ID == ip.Ingredient.ID
-		})
-		// append the ingredient
-		if i == -1 {
-			out = append(
-				out,
-				db.IngredientWithPrices{
-					Ingredient: db.Ingredient{ID: ingredientRow.ID, Name: ingredientRow.Name},
-				},
-			)
-			i = len(out) - 1
-		}
-		// append the price to the ingredient
-		if price != nil {
-			out[i].Prices = append(out[i].Prices, *price)
-		}
 	}
 
+	err := pc.baseProductPriceResolver.resolveBaseProductPrices(out, c)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (pc *PriceCalcService) resolveBaseProductPrices(
+	ingredients []db.IngredientWithPrices,
+	ctx context.Context,
+) error {
 	// check if the ingredient has a base product
-	for i, ingredient := range out {
+	for i, ingredient := range ingredients {
 		if len(ingredient.Prices) <= 0 {
 			continue
 		}
 		for j, price := range ingredient.Prices {
 			if price.BaseProductID != nil {
-				prodCost, err := pc.queries.GetProductCost(c, *price.BaseProductID)
+				prodCost, err := pc.queries.GetProductCost(ctx, *price.BaseProductID)
 				if err == sql.ErrNoRows {
 					// this should not happen, but if it does, calculate the cost and create the row
-					cost, err := pc.UpdateProductCost(*price.BaseProductID, c)
+					var cost float64
+					cost, err = pc.UpdateProductCost(*price.BaseProductID, ctx)
 					if err != nil {
-						return nil, err
+						return err
 					}
-					out[i].Prices[j].Price = &cost
+					ingredients[i].Prices[j].Price = &cost
 				} else if err != nil {
-					return nil, err
+					return err
 				} else {
-					out[i].Prices[j].Price = &prodCost.Cost
+					ingredients[i].Prices[j].Price = &prodCost.Cost
 				}
 			}
 		}
 	}
 
-	return out, nil
+	return nil
 }
 
 func (pc *PriceCalcService) UpdateProductCost(
@@ -340,20 +368,19 @@ func (pc *PriceCalcService) PutIngredient(name string) (*db.Ingredient, error) {
 	return &ingredient, nil
 }
 
-func (pc *PriceCalcService) UpdateIngredientWithPrice(
-	ingredientId int64,
-	ingredientName string,
-	price *float64,
-	quantity float64,
-	unitId int64,
-	baseProductId *int64,
-	c ...context.Context,
-) (*db.IngredientWithPrices, error) {
-	ctx := context.Background()
-	if len(c) > 0 {
-		ctx = c[0]
-	}
+type UpdateIngredientParams struct {
+	ID            int64
+	Name          string
+	Price         *float64
+	Quantity      float64
+	UnitID        int64
+	BaseProductID *int64
+}
 
+func (pc *PriceCalcService) UpdateIngredientWithPrice(
+	ctx context.Context,
+	params UpdateIngredientParams,
+) (*db.IngredientWithPrices, error) {
 	tx, err := pc.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -365,7 +392,7 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 	ingredientWithPriceRow, err := qtx.GetIngredientWithPriceUnit(
 		ctx,
 		db.GetIngredientWithPriceUnitParams{
-			ID:    ingredientId,
+			ID:    params.ID,
 			Limit: 1,
 		},
 	)
@@ -373,10 +400,11 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 		return nil, err
 	}
 
-	if ingredientWithPriceRow.Name != ingredientName {
-		ingredient, err := qtx.UpdateIngredient(ctx, db.UpdateIngredientParams{
-			ID:   ingredientId,
-			Name: ingredientName,
+	if ingredientWithPriceRow.Name != params.Name {
+		var ingredient db.Ingredient
+		ingredient, err = qtx.UpdateIngredient(ctx, db.UpdateIngredientParams{
+			ID:   params.ID,
+			Name: params.Name,
 		})
 		if err != nil {
 			return nil, err
@@ -385,50 +413,48 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 		ingredientWithPriceRow.Name = ingredient.Name
 	}
 
-	unit, ok := pc.Units[unitId]
+	unit, ok := pc.Units[params.UnitID]
 	if !ok {
 		return nil, errors.New("unit not found")
 	}
 
-	if price == nil && baseProductId == nil || price != nil && baseProductId != nil {
+	if params.Price == nil && params.BaseProductID == nil ||
+		params.Price != nil && params.BaseProductID != nil {
 		return nil, errors.New("either price or baseProductId must be set but not both")
 	}
 
-	baseUnitQuantity := quantity / unit.Factor
+	baseUnitQuantity := params.Quantity / unit.Factor
 	var baseUnitPrice *float64 = nil
-	if price != nil {
+	if params.Price != nil {
 		baseUnitPrice = new(float64)
-		*baseUnitPrice = *price / baseUnitQuantity
+		*baseUnitPrice = *params.Price / baseUnitQuantity
 	}
 
 	var ingredientPrice db.IngredientPrice
 	if ingredientWithPriceRow.PriceID == nil ||
 		ingredientWithPriceRow.Price != baseUnitPrice ||
 		(ingredientWithPriceRow.Price != nil && baseUnitPrice != nil && *ingredientWithPriceRow.Price != *baseUnitPrice) ||
-		ingredientWithPriceRow.BaseProductID != baseProductId ||
-		(ingredientWithPriceRow.BaseProductID != nil && baseProductId != nil && *ingredientWithPriceRow.BaseProductID != *baseProductId) ||
-		*ingredientWithPriceRow.Quantity != quantity ||
-		*ingredientWithPriceRow.UnitID != unitId {
+		ingredientWithPriceRow.BaseProductID != params.BaseProductID ||
+		(ingredientWithPriceRow.BaseProductID != nil && params.BaseProductID != nil && *ingredientWithPriceRow.BaseProductID != *params.BaseProductID) ||
+		*ingredientWithPriceRow.Quantity != params.Quantity ||
+		*ingredientWithPriceRow.UnitID != params.UnitID {
 
-		fmt.Printf(
-			"Insert Price: %v, BaseProductID: %v (price==nil: %v, baseProductID==nil: %v)\n",
+		pc.logger.Debug(
+			"update ingredient price",
+			"ingredientID",
 			baseUnitPrice,
-			baseProductId,
-			baseUnitPrice == nil,
-			baseProductId == nil,
+			"BaseProductID",
+			params.BaseProductID,
 		)
-		if baseProductId != nil {
-			fmt.Printf("*baseProductID = %d\n", *baseProductId)
-		}
 
 		ingredientPrice, err = qtx.PutIngredientPrice(
 			ctx,
 			db.PutIngredientPriceParams{
-				IngredientID:  ingredientId,
+				IngredientID:  params.ID,
 				Price:         baseUnitPrice,
-				BaseProductID: baseProductId,
-				Quantity:      quantity,
-				UnitID:        unitId,
+				BaseProductID: params.BaseProductID,
+				Quantity:      params.Quantity,
+				UnitID:        params.UnitID,
 			},
 		)
 		if err != nil {
@@ -443,7 +469,7 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 	}
 
 	// find all products that use this ingredient
-	products, err := qtx.GetProductsFromIngredient(ctx, ingredientId)
+	products, err := qtx.GetProductsFromIngredient(ctx, params.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -836,22 +862,4 @@ func (pc *PriceCalcService) GetProductsFromUnit(
 		productNames[i] = product.Name
 	}
 	return productNames, nil
-}
-
-func Where[C ~[]T, T any](collection C, predicate func(T) bool) (out C) {
-	for _, v := range collection {
-		if predicate(v) {
-			out = append(out, v)
-		}
-	}
-	return
-}
-
-func First[C ~[]T, T any](collection C, predicate func(T) bool) (out T, ok bool) {
-	for _, v := range collection {
-		if predicate(v) {
-			return v, true
-		}
-	}
-	return out, false
 }

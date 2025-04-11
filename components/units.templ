@@ -2,7 +2,7 @@ package components
 
 import (
 	"github.com/mike-jl/price_calc/db"
-	"github.com/mike-jl/price_calc/services"
+	"github.com/mike-jl/price_calc/internal/utils"
 	"fmt"
 )
 
@@ -77,7 +77,7 @@ templ UnitsTable(units []db.Unit) {
 	<section class="section">
 		<div class="product-row">
 			for _, unit := range units {
-				if baseUnit, ok := services.First(units, func(u db.Unit) bool {
+				if baseUnit, ok := utils.First(units, func(u db.Unit) bool {
 					return unit.BaseUnitID != nil && *unit.BaseUnitID == u.ID
 				}); ok {
 					@UnitRow(unit, &baseUnit)

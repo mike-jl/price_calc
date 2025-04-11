@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mike-jl/price_calc/components"
 	"github.com/mike-jl/price_calc/db"
+	"github.com/mike-jl/price_calc/internal/utils"
 	"github.com/mike-jl/price_calc/services"
 	viewmodels "github.com/mike-jl/price_calc/viewModels"
 )
@@ -119,8 +120,19 @@ func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
 
 	name := c.FormValue("name")
 
+	// ingredientWithPrice, err := ph.service.UpdateIngredientWithPrice(
+	// 	ingredientId, name, pricePtr, quantity, unitId, baseProductIdPtr, c.Request().Context())
 	ingredientWithPrice, err := ph.service.UpdateIngredientWithPrice(
-		ingredientId, name, pricePtr, quantity, unitId, baseProductIdPtr, c.Request().Context())
+		c.Request().Context(),
+		services.UpdateIngredientParams{
+			ID:            ingredientId,
+			Name:          name,
+			Price:         pricePtr,
+			Quantity:      quantity,
+			UnitID:        unitId,
+			BaseProductID: baseProductIdPtr,
+		},
+	)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not update ingredient "+err.Error())
 	}
@@ -364,44 +376,6 @@ func (ph *PriceCalcHandler) getProductEditPage(c echo.Context) error {
 	)
 }
 
-func (ph *PriceCalcHandler) getProductEdit(c echo.Context) error {
-	productId, err := strconv.ParseInt(c.Param("product-id"), 10, 64)
-	if err != nil {
-		return c.String(http.StatusBadRequest, "could not parse product id "+err.Error())
-	}
-	productWithCost, err := ph.service.GetProductWithCost(productId)
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "could not get product "+err.Error())
-	}
-	ingredientUsage, err := ph.service.GetIngredientUsageForProduct(productId)
-	if err != nil {
-		return c.String(
-			http.StatusInternalServerError,
-			"could not get ingredient usage "+err.Error(),
-		)
-	}
-
-	categories, err := ph.service.GetCategories()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "could not get categories "+err.Error())
-	}
-	ingredients, err := ph.service.GetIngredientsWithPrice()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "could not get ingredients "+err.Error())
-	}
-	return render(
-		c,
-		http.StatusOK,
-		components.ProductRowEdit(
-			*productWithCost,
-			categories,
-			ingredientUsage,
-			ingredients,
-			ph.service.Units,
-		),
-	)
-}
-
 func (ph *PriceCalcHandler) postProduct(c echo.Context) error {
 	productId, err := strconv.ParseInt(c.Param("product-id"), 10, 64)
 	if err != nil {
@@ -422,6 +396,9 @@ func (ph *PriceCalcHandler) postProduct(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "could not parse category id "+err.Error())
 	}
 	_, err = ph.service.UpdateProduct(productId, categoryId, price, multiplicator, name)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not update product "+err.Error())
+	}
 
 	product, err := ph.service.GetProductWithCost(productId)
 	if err != nil {
@@ -660,7 +637,7 @@ func (ph *PriceCalcHandler) putUnit(c echo.Context) error {
 		if err != nil {
 			return c.String(http.StatusInternalServerError, "could not get base unit "+err.Error())
 		}
-		if bunit, ok := services.First(units, func(u db.Unit) bool {
+		if bunit, ok := utils.First(units, func(u db.Unit) bool {
 			return u.ID == baseUnitId
 		}); ok {
 			baseUnit = &bunit
@@ -681,7 +658,7 @@ func (ph *PriceCalcHandler) getUnitEdit(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
 	}
 
-	unit, ok := services.First(units, func(u db.Unit) bool {
+	unit, ok := utils.First(units, func(u db.Unit) bool {
 		return u.ID == unitId
 	})
 	if !ok {
@@ -730,7 +707,7 @@ func (ph *PriceCalcHandler) postUnit(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
 	}
 
-	unit, ok := services.First(units, func(u db.Unit) bool {
+	unit, ok := utils.First(units, func(u db.Unit) bool {
 		return u.ID == unitId
 	})
 	if !ok {
@@ -741,7 +718,7 @@ func (ph *PriceCalcHandler) postUnit(c echo.Context) error {
 	}
 
 	if baseUnitIdPtr != nil {
-		if _, ok := services.First(units, func(u db.Unit) bool {
+		if _, ok := utils.First(units, func(u db.Unit) bool {
 			return u.ID == *baseUnitIdPtr
 		}); !ok {
 			return c.String(
@@ -752,7 +729,7 @@ func (ph *PriceCalcHandler) postUnit(c echo.Context) error {
 	}
 
 	if baseUnitIdPtr != nil && unit.BaseUnitID == nil {
-		dependentUnits := services.Where(units, func(u db.Unit) bool {
+		dependentUnits := utils.Where(units, func(u db.Unit) bool {
 			return u.BaseUnitID != nil && *u.BaseUnitID == unitId
 		})
 		if len(dependentUnits) > 0 {
@@ -776,7 +753,7 @@ func (ph *PriceCalcHandler) postUnit(c echo.Context) error {
 
 	baseUnit := &db.Unit{}
 	if baseUnitId != 0 {
-		if bunit, ok := services.First(units, func(u db.Unit) bool {
+		if bunit, ok := utils.First(units, func(u db.Unit) bool {
 			return u.ID == baseUnitId
 		}); ok {
 			baseUnit = &bunit

@@ -35,7 +35,7 @@ func UnitsTable(units []db.Unit) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"hero is-info custom\"><div class=\"hero-body\"><form hx-put=\"/unit\" hx-swap=\"beforebegin\" hx-target=\"#unit-table-end\"><div class=\"product-row\"><div class=\"block\" x-data=\"{ base: 0 }\"><div class=\"columns is-align-items-flex-end\"><div class=\"column\"><div class=\"field\"><label class=\"label is-hidden-tablet product-label\">Name</label><div class=\"control\"><input class=\"input\" type=\"text\" name=\"name\"></div></div></div><div class=\"column\"><div class=\"field\"><label class=\"label is-hidden-tablet product-label\">Base Unit</label><div class=\"control is-expanded\"><div class=\"select is-fullwidth\"><select name=\"base-unit-id\" x-model=\"base\"><option value=\"0\" selected>Is Base</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"section hero is-info custom block\"><div class=\"container\"><div class=\"hero-body p-0\"><form hx-put=\"/unit\" hx-swap=\"beforebegin\" hx-target=\"#unit-table-end\"><div class=\"product-row\"><div class=\"block\" x-data=\"{ base: 0 }\"><div class=\"columns is-align-items-flex-end\"><div class=\"column\"><div class=\"field\"><label class=\"label is-hidden-tablet product-label\">Name</label><div class=\"control\"><input class=\"input\" type=\"text\" name=\"name\"></div></div></div><div class=\"column\"><div class=\"field\"><label class=\"label is-hidden-tablet product-label\">Base Unit</label><div class=\"control is-expanded\"><div class=\"select is-fullwidth\"><select name=\"base-unit-id\" x-model=\"base\"><option value=\"0\" selected>Is Base</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -48,7 +48,7 @@ func UnitsTable(units []db.Unit) templ.Component {
 				var templ_7745c5c3_Var2 string
 				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", unit.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 37, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 38, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -61,7 +61,7 @@ func UnitsTable(units []db.Unit) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(unit.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 37, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 38, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -73,7 +73,7 @@ func UnitsTable(units []db.Unit) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</select></div></div></div></div><div class=\"column\"><div class=\"field\"><label class=\"label is-hidden-tablet product-label\">Factor</label><div class=\"field has-addons\"><p class=\"control is-expanded\"><input class=\"input\" type=\"text\" value=\"1.00\" name=\"factor\" x-bind:disabled=\"base == 0\"></p></div></div></div><div class=\"column is-3\"><button id=\"product-modal-button\" class=\"button is-success\" hx-swap=\"beforebegin\" hx-target=\"#product-table-end\">Add</button></div></div></div></div></form></div></section><section class=\"section\"><div class=\"product-row\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</select></div></div></div></div><div class=\"column\"><div class=\"field\"><label class=\"label is-hidden-tablet product-label\">Factor</label><div class=\"field has-addons\"><p class=\"control is-expanded\"><input class=\"input\" type=\"text\" value=\"1.00\" name=\"factor\" x-bind:disabled=\"base == 0\"></p></div></div></div><div class=\"column is-3\"><button id=\"product-modal-button\" class=\"button is-success\" hx-swap=\"beforebegin\" hx-target=\"#product-table-end\">Add</button></div></div></div></div></form></div></div></section><section class=\"section\"><div class=\"product-row container\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -128,7 +128,7 @@ func UnitRow(unit db.Unit, baseUnit *db.Unit) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(unit.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 100, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 102, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -146,7 +146,7 @@ func UnitRow(unit db.Unit, baseUnit *db.Unit) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(baseUnit.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 111, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 113, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -169,7 +169,7 @@ func UnitRow(unit db.Unit, baseUnit *db.Unit) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", unit.Factor))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 129, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 131, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -182,7 +182,7 @@ func UnitRow(unit db.Unit, baseUnit *db.Unit) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/unit/%d/edit", unit.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 139, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 141, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -231,7 +231,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 			}(),
 		))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 160, Col: 1}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 162, Col: 1}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -244,7 +244,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(unit.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 170, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 172, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -257,7 +257,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("unit-edit-form-%d", unit.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 172, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 174, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -270,7 +270,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("unit-edit-form-%d", unit.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 185, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 187, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -289,7 +289,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", unit.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 190, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 192, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -302,7 +302,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(unit.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 191, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 193, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -321,7 +321,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f", unit.Factor))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 209, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 211, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -334,7 +334,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("unit-edit-form-%d", unit.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 210, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 212, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -347,7 +347,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("unit-edit-form-%d", unit.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 219, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 221, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -360,7 +360,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/unit/%d", unit.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 220, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 222, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -373,7 +373,7 @@ func UnitRowEdit(unit db.Unit, units []db.Unit) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/unit/%d", unit.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 233, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/units.templ`, Line: 235, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {

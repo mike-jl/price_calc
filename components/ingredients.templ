@@ -7,29 +7,33 @@ import (
 )
 
 templ IngredientsTable(ingredients []db.IngredientWithPrices, units services.UnitsMap, products map[int64]string) {
-	<section class="hero is-info custom">
-		<form hx-put="/ingredient" hx-swap="afterbegin" hx-target="#ingredient-table-body">
-			<div class="hero-body">
-				<div class="field">
-					<label class="label">New Ingredient</label>
-					<div class="field has-addons">
-						<div class="control">
-							<input class="input" type="text" placeholder="Ingredient Name" name="name"/>
-						</div>
-						<div class="control">
-							<button class="button is-success" type="submit">
-								Add
-							</button>
+	<section class="section hero is-info custom block">
+		<div class="container">
+			<div class="hero-body p-0">
+				<form hx-put="/ingredient" hx-swap="afterbegin" hx-target="#ingredient-table-body">
+					<div class="field">
+						<label class="label">New Ingredient</label>
+						<div class="field has-addons">
+							<div class="control">
+								<input class="input" type="text" placeholder="Ingredient Name" name="name"/>
+							</div>
+							<div class="control">
+								<button class="button is-success" type="submit">
+									Add
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
+				</form>
 			</div>
-		</form>
+		</div>
 	</section>
-	<section class="section product-row" id="ingredient-table-body">
-		for _, ingredient := range ingredients {
-			@IngredientRow(ingredient, units, products)
-		}
+	<section class="section">
+		<div class="product-row container">
+			for _, ingredient := range ingredients {
+				@IngredientRow(ingredient, units, products)
+			}
+		</div>
 	</section>
 }
 

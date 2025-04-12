@@ -7,32 +7,36 @@ import (
 )
 
 templ Categories(categories []db.Category) {
-	<section class="hero is-info custom">
-		<div class="hero-body">
-			<form hx-put="/category" hx-swap="beforeend" hx-target=".section.product-row">
-				<div class="field">
-					<label class="label">New Category</label>
-					<div class="field has-addons">
-						<div class="control">
-							<input class="input" type="text" placeholder="Category Name" name="name"/>
-						</div>
-						<div class="control">
-							<input class="input" type="number" placeholder="VAT" name="vat"/>
-						</div>
-						<div class="control">
-							<button class="button is-success" type="submit">
-								Add
-							</button>
+	<section class="section hero is-info custom block">
+		<div class="container">
+			<div class="hero-body p-0">
+				<form hx-put="/category" hx-swap="beforeend" hx-target=".section.product-row">
+					<div class="field">
+						<label class="label">New Category</label>
+						<div class="field has-addons">
+							<div class="control">
+								<input class="input" type="text" placeholder="Category Name" name="name"/>
+							</div>
+							<div class="control">
+								<input class="input" type="number" placeholder="VAT" name="vat"/>
+							</div>
+							<div class="control">
+								<button class="button is-success" type="submit">
+									Add
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
-			</form>
+				</form>
+			</div>
 		</div>
 	</section>
-	<section class="section product-row">
-		for _, category := range categories {
-			@CategoryRow(category)
-		}
+	<section class="section">
+		<div class="product-row container">
+			for _, category := range categories {
+				@CategoryRow(category)
+			}
+		</div>
 	</section>
 }
 

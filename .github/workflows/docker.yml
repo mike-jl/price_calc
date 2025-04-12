@@ -1,0 +1,58 @@
+name: Build & Publish Docker Image to GHCR
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image tag
+        id: vars
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
+            echo "Tagged version: $TAG"
+            echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+            echo "tagged_version=true" >> $GITHUB_OUTPUT
+          else
+            echo "Defaulting to 'dev'"
+            echo "image_tag=dev" >> $GITHUB_OUTPUT
+            echo "tagged_version=false" >> $GITHUB_OUTPUT
+          fi
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.image_tag }}
+            ${{ steps.vars.outputs.tagged_version == 'true' && steps.vars.outputs.image + ':latest' || '' }}
+

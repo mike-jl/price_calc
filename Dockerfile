@@ -1,7 +1,16 @@
-# Build stage
-FROM golang:1.24 AS builder
+# --- Stage 1: Frontend Build ---
+FROM node:20 AS frontend
 
-# Install tools needed to build go-sqlite3 (CGO)
+WORKDIR /app
+
+COPY package*.json vite.config.ts tsconfig.json ./
+COPY scripts ./scripts
+RUN npm install
+RUN npm run build
+
+# --- Stage 2: Go Backend Build ---
+FROM golang:1.24 AS backend
+
 RUN apt-get update && apt-get install -y gcc libc6-dev
 
 WORKDIR /app
@@ -10,23 +19,25 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-
 ENV CGO_ENABLED=1
-
 RUN go build -o main .
 
-# Runtime stage (Debian)
+# --- Stage 3: Final Image ---
 FROM debian:bookworm-slim
 
-# Install required sqlite shared libraries
 RUN apt-get update && apt-get install -y sqlite3 libsqlite3-0 && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /root/
+WORKDIR /root
 
-COPY --from=builder /app/main .
-COPY --from=builder /app/assets ./assets
-COPY --from=builder /app/data ./data
+# Copy Go binary
+COPY --from=backend /app/main .
+
+# Copy static assets (built JS, CSS)
+COPY --from=frontend /app/dist ./assets
+
+# Copy runtime data (db etc.)
+COPY --from=backend /app/data ./data
 
 EXPOSE 42069
-
 CMD ["./main"]
+

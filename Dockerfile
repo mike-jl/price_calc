@@ -33,7 +33,7 @@ WORKDIR /root
 COPY --from=backend /app/main .
 
 # Copy static assets (built JS, CSS)
-COPY --from=frontend /app/dist ./assets
+COPY --from=frontend /app/assets ./assets
 
 # Copy runtime data (db etc.)
 COPY --from=backend /app/data ./data

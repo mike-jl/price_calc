@@ -43,8 +43,8 @@ jobs:
             TAGS+=("${IMAGE}:dev")
           fi
 
-          echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          { printf "tags<<EOF\n"; printf "%s\n" "${TAGS[@]}"; echo "EOF"; } >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

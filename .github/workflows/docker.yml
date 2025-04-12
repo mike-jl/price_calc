@@ -2,18 +2,16 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'  # Triggers on version tags like v1.0.0
+    branches: [main]
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write  # Required to push to GitHub Container Registry
 
     steps:
       - name: Checkout code
@@ -29,25 +27,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set image tag
+      - name: Set image tags
         id: vars
         run: |
           IMAGE=ghcr.io/${{ github.repository }}
+          TAGS=()
+          
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            TAG=${GITHUB_REF#refs/tags/}
-            echo "Tagged version: $TAG"
-            echo "image_tag=$TAG" >> $GITHUB_OUTPUT
-            echo "tagged_version=true" >> $GITHUB_OUTPUT
-            echo "image_tags<<EOF" >> $GITHUB_OUTPUT
-            echo "$IMAGE:$TAG" >> $GITHUB_OUTPUT
-            echo "$IMAGE:latest" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            VERSION=${GITHUB_REF#refs/tags/}
+            TAGS+=("${IMAGE}:${VERSION}")
+            TAGS+=("${IMAGE}:latest")
           else
-            echo "Defaulting to 'dev'"
-            echo "image_tag=dev" >> $GITHUB_OUTPUT
-            echo "tagged_version=false" >> $GITHUB_OUTPUT
-            echo "image_tags=$IMAGE:dev" >> $GITHUB_OUTPUT
+            SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+            TAGS+=("${IMAGE}:${SHORT_SHA}")
+            TAGS+=("${IMAGE}:dev")
           fi
+
+          echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image

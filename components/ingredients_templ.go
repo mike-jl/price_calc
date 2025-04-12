@@ -35,7 +35,7 @@ func IngredientsTable(ingredients []db.IngredientWithPrices, units services.Unit
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"section hero is-info custom block\"><div class=\"container\"><div class=\"hero-body p-0\"><form hx-put=\"/ingredient\" hx-swap=\"afterbegin\" hx-target=\"#ingredient-table-body\"><div class=\"field\"><label class=\"label\">New Ingredient</label><div class=\"field has-addons\"><div class=\"control\"><input class=\"input\" type=\"text\" placeholder=\"Ingredient Name\" name=\"name\"></div><div class=\"control\"><button class=\"button is-success\" type=\"submit\">Add</button></div></div></div></form></div></div></section><section class=\"section\"><div class=\"product-row container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"section hero is-info custom block\"><div class=\"container\"><div class=\"hero-body p-0\"><form hx-put=\"/ingredient\" hx-swap=\"afterbegin\" hx-target=\"#ingredient-table-body\"><div class=\"field\"><label class=\"label\">New Ingredient</label><div class=\"field has-addons\"><div class=\"control\"><input class=\"input\" type=\"text\" placeholder=\"Ingredient Name\" name=\"name\"></div><div class=\"control\"><button class=\"button is-success\" type=\"submit\">Add</button></div></div></div></form></div></div></section><section class=\"section\"><div class=\"product-row container\" id=\"ingredient-table-body\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -627,7 +627,7 @@ func IngredientRowEdit(ingredient db.IngredientWithPrices, units services.UnitsM
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\" class=\"responsive-buttons\"><button type=\"submit\" class=\"button\" hx-put=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\" class=\"responsive-buttons\"><button type=\"submit\" class=\"button is-link\" hx-put=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -640,33 +640,33 @@ func IngredientRowEdit(ingredient db.IngredientWithPrices, units services.UnitsM
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" hx-target=\"closest .block\" hx-swap=\"outerHTML\">Safe</button> <button class=\"button\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" hx-target=\"closest .block\" hx-swap=\"outerHTML\" title=\"Save\"><span class=\"is-hidden-tablet\">Save</span> <i class=\"fas fa-check fa-fw is-hidden-mobile\"></i></button> <button class=\"button\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 302, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 304, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" hx-target=\"closest .block\" hx-swap=\"outerHTML\">Cancel</button> <button class=\"button is-danger\" hx-delete=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" hx-target=\"closest .block\" hx-swap=\"outerHTML\" title=\"Cancel\"><span class=\"is-hidden-tablet\">Cancel</span> <i class=\"fas fa-times fa-fw is-hidden-mobile\"></i></button> <button class=\"button is-danger\" hx-delete=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 310, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/ingredients.templ`, Line: 314, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\" hx-target=\"closest .block\" hx-swap=\"outerHTML\">Delete</button></form></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\" hx-target=\"closest .block\" hx-swap=\"outerHTML\" title=\"Delete\"><span class=\"is-hidden-tablet\">Delete</span> <i class=\"fas fa-trash fa-fw is-hidden-mobile\"></i></button></form></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -29,7 +29,7 @@ templ IngredientsTable(ingredients []db.IngredientWithPrices, units services.Uni
 		</div>
 	</section>
 	<section class="section">
-		<div class="product-row container">
+		<div class="product-row container" id="ingredient-table-body">
 			for _, ingredient := range ingredients {
 				@IngredientRow(ingredient, units, products)
 			}
@@ -290,28 +290,34 @@ templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.Units
 				>
 					<button
 						type="submit"
-						class="button"
+						class="button is-link"
 						hx-put={ fmt.Sprintf("/ingredient-price/%d", ingredient.Ingredient.ID) }
 						hx-target="closest .block"
 						hx-swap="outerHTML"
+						title="Save"
 					>
-						Safe
+						<span class="is-hidden-tablet">Save</span>
+						<i class="fas fa-check fa-fw is-hidden-mobile"></i>
 					</button>
 					<button
 						class="button"
 						hx-get={ fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID) }
 						hx-target="closest .block"
 						hx-swap="outerHTML"
+						title="Cancel"
 					>
-						Cancel
+						<span class="is-hidden-tablet">Cancel</span>
+						<i class="fas fa-times fa-fw is-hidden-mobile"></i>
 					</button>
 					<button
 						class="button is-danger"
 						hx-delete={ fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID) }
 						hx-target="closest .block"
 						hx-swap="outerHTML"
+						title="Delete"
 					>
-						Delete
+						<span class="is-hidden-tablet">Delete</span>
+						<i class="fas fa-trash fa-fw is-hidden-mobile"></i>
 					</button>
 				</form>
 			</div>

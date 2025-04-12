@@ -389,13 +389,21 @@ templ IngredientUsageRowEdit() {
 		>
 			<button
 				type="submit"
-				class="button"
-			>Safe</button>
+				class="button is-link"
+				title="Save"
+			>
+				<span class="is-hidden-tablet">Save</span>
+				<i class="fas fa-check is-hidden-mobile"></i>
+			</button>
 			<button
 				type="button"
 				class="button"
 				@click="cancelEditing(usage)"
-			>Cancel</button>
+				title="Cancel"
+			>
+				<span class="is-hidden-tablet">Cancel</span>
+				<i class="fas fa-times is-hidden-mobile"></i>
+			</button>
 			<button
 				type="button"
 				class="button is-danger"
@@ -403,7 +411,11 @@ templ IngredientUsageRowEdit() {
 				hx-swap="none"
 				x-init="htmx.process($el)"
 				@htmx:after-request="removeUsage(usage.id)"
-			>Delete</button>
+				title="Delete"
+			>
+				<span class="is-hidden-tablet">Delete</span>
+				<i class="fas fa-trash is-hidden-mobile"></i>
+			</button>
 		</form>
 	</div>
 }

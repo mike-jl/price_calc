@@ -335,9 +335,7 @@ func (pc *PriceCalcService) GetIngredientWithPrices(
 	ingredient, err := pc.queries.GetIngredientsWithPriceUnit(
 		c,
 		db.GetIngredientsWithPriceUnitParams{
-			// ID:    ingredientId,
-			// Limit: priceLimit,
-			IngredientID: nil,
+			IngredientID: ingredientId,
 			PriceLimit:   priceLimit,
 		},
 	)

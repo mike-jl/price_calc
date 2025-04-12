@@ -22,13 +22,16 @@
     align-items: flex-end;
 }
 
-.responsive-buttons>.button {
+.responsive-buttons .button {
     display: block;
     flex: 1;
     text-overflow: ellipsis;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     width: 100%;
+    padding-left: calc(0.5em - var(--bulma-button-border-width));
+    padding-right: calc(0.5em - var(--bulma-button-border-width));
 }
 
 /* For tablet and larger screens (≥ 769px), display buttons in a row */

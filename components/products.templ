@@ -143,13 +143,3 @@ func getCategoryFromId(id int64, categories []db.Category) db.Category {
 	}
 	return db.Category{}
 }
-
-templ UnitSelect(units []db.Unit, unitID int64) {
-	for _, unit := range(units) {
-		<option
-			value={ fmt.Sprintf("%d", unit.ID) }
-			selected?={ unit.ID == unitID }
-			data-factor={ fmt.Sprintf("%f", unit.Factor) }
-		>{ unit.Name }</option>
-	}
-}

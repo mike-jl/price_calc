@@ -459,32 +459,6 @@ func (ph *PriceCalcHandler) deleteProduct(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-func (ph *PriceCalcHandler) getUnitListFiltered(c echo.Context) error {
-	unitId, err := strconv.ParseInt(c.FormValue("unitId"), 10, 64)
-	if err != nil {
-		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
-	}
-	baseUnitID := unitId
-
-	units, err := ph.service.GetUnitsMap(c.Request().Context())
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
-	}
-
-	if units[unitId].BaseUnitID != nil {
-		baseUnitID = *units[unitId].BaseUnitID
-	}
-	filteredUnits := []db.Unit{}
-	filteredUnits = append(filteredUnits, units[baseUnitID])
-	for _, unit := range units {
-		if unit.BaseUnitID != nil && *unit.BaseUnitID == baseUnitID {
-			filteredUnits = append(filteredUnits, unit)
-		}
-	}
-	return render(c, http.StatusOK, components.UnitSelect(filteredUnits, unitId))
-}
-
 func (ph *PriceCalcHandler) putIngredientUsage(c echo.Context) error {
 	productId, err := strconv.ParseInt(c.Param("product-id"), 10, 64)
 	if err != nil {

@@ -243,10 +243,10 @@ templ ProductEdit(viewModel viewmodels.ProductEditViewModel) {
 				<template x-for="(usage, i) in ingredient_usages_ext" :key="usage.id">
 					<div class="block">
 						<template x-if="!usage.editing">
-							@IngredientUsageRowA()
+							@IngredientUsageRow()
 						</template>
 						<template x-if="usage.editing">
-							@IngredientUsageRowEditA()
+							@IngredientUsageRowEdit()
 						</template>
 					</div>
 				</template>
@@ -256,7 +256,7 @@ templ ProductEdit(viewModel viewmodels.ProductEditViewModel) {
 	<div id="htmx-script-dump" hidden></div>
 }
 
-templ IngredientUsageRowA() {
+templ IngredientUsageRow() {
 	<div class="columns">
 		<div class="column">
 			<div class="field">
@@ -316,7 +316,7 @@ templ IngredientUsageRowA() {
 	</div>
 }
 
-templ IngredientUsageRowEditA() {
+templ IngredientUsageRowEdit() {
 	<div class="columns">
 		<div class="column">
 			<div class="field">

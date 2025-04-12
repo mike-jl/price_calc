@@ -593,7 +593,7 @@ func (ph *PriceCalcHandler) getIngredientUsageEdit(c echo.Context) error {
 	return render(
 		c,
 		http.StatusOK,
-		components.IngredientUsageRowEditA(),
+		components.IngredientUsageRowEdit(),
 	)
 }
 

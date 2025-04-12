@@ -35,7 +35,7 @@ func Categories(categories []db.Category) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"hero is-info\"><div class=\"hero-body\"><form hx-put=\"/category\" hx-swap=\"beforeend\" hx-target=\".section.product-row\"><div class=\"field\"><label class=\"label\">New Category</label><div class=\"field has-addons\"><div class=\"control\"><input class=\"input\" type=\"text\" placeholder=\"Category Name\" name=\"name\"></div><div class=\"control\"><input class=\"input\" type=\"number\" placeholder=\"VAT\" name=\"vat\"></div><div class=\"control\"><button class=\"button is-success\" type=\"submit\">Add</button></div></div></div></form></div></section><section class=\"section product-row\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"hero is-info custom\"><div class=\"hero-body\"><form hx-put=\"/category\" hx-swap=\"beforeend\" hx-target=\".section.product-row\"><div class=\"field\"><label class=\"label\">New Category</label><div class=\"field has-addons\"><div class=\"control\"><input class=\"input\" type=\"text\" placeholder=\"Category Name\" name=\"name\"></div><div class=\"control\"><input class=\"input\" type=\"number\" placeholder=\"VAT\" name=\"vat\"></div><div class=\"control\"><button class=\"button is-success\" type=\"submit\">Add</button></div></div></div></form></div></section><section class=\"section product-row\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

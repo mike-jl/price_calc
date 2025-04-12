@@ -311,7 +311,7 @@ left join
         order by time_stamp desc
         limit?1
     )
-where (?2 is null or id =?2)
+where (?2 is null or i.id =?2)
 `
 
 type GetIngredientsWithPriceUnitParams struct {

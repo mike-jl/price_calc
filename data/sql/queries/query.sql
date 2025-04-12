@@ -17,7 +17,7 @@ left join
         order by time_stamp desc
         limit:price_limit
     )
-where (:ingredient_id is null or id =:ingredient_id)
+where (:ingredient_id is null or i.id =:ingredient_id)
 ;
 
 -- name: PutIngredient :one

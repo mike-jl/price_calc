@@ -8,41 +8,43 @@ import (
 )
 
 templ ProductsTable(products []db.ProductWithCost, categories []db.Category) {
-	<section class="hero is-info">
-		<div class="hero-body">
-			<form
-				hx-put="/product"
-				hx-swap="beforebegin"
-				hx-target="#product-table-end"
-			>
-				<div class="field">
-					<label class="label">New Product</label>
-					<div class="field has-addons">
-						<div class="control">
-							<input class="input" type="text" placeholder="Name" name="name"/>
-						</div>
-						<div class="control">
-							<span class="select">
-								<select name="category-id">
-									for _, category := range categories {
-										<option value={ strconv.FormatInt(category.ID, 10) }>{ category.Name }</option>
-									}
-									<option selected hidden disabled>Category</option>
-								</select>
-							</span>
-						</div>
-						<div class="control">
-							<button class="button is-success" type="submit">
-								Add
-							</button>
+	<section class="section hero is-info custom block">
+		<div class="container">
+			<div class="hero-body p-0">
+				<form
+					hx-put="/product"
+					hx-swap="beforebegin"
+					hx-target="#product-table-end"
+				>
+					<div class="field">
+						<label class="label">New Product</label>
+						<div class="field has-addons">
+							<div class="control">
+								<input class="input" type="text" placeholder="Name" name="name"/>
+							</div>
+							<div class="control">
+								<span class="select">
+									<select name="category-id">
+										for _, category := range categories {
+											<option value={ strconv.FormatInt(category.ID, 10) }>{ category.Name }</option>
+										}
+										<option selected hidden disabled>Category</option>
+									</select>
+								</span>
+							</div>
+							<div class="control">
+								<button class="button is-success" type="submit">
+									Add
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
-			</form>
+				</form>
+			</div>
 		</div>
 	</section>
 	<section class="section">
-		<div class="product-row">
+		<div class="product-row container">
 			for _, product := range products {
 				@ProductRow(product, categories)
 			}

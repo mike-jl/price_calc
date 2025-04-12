@@ -7,7 +7,7 @@ import (
 )
 
 templ IngredientsTable(ingredients []db.IngredientWithPrices, units services.UnitsMap, products map[int64]string) {
-	<section class="hero is-info">
+	<section class="hero is-info custom">
 		<form hx-put="/ingredient" hx-swap="afterbegin" hx-target="#ingredient-table-body">
 			<div class="hero-body">
 				<div class="field">

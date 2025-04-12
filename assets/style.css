@@ -42,6 +42,31 @@
     --bulma-block-spacing: .75rem;
 }
 
+.custom {
+    --bulma-info: hsl(200, 100%, 90%);
+    --bulma-info-invert: hsl(200, 100%, 20%);
+}
+
+@media (prefers-color-scheme: dark) {
+    .custom {
+        --bulma-info: #373F51;
+        --bulma-info-invert: hsl(0, 0%, 100%);
+        --bulma-navbar-h: 0 !important;
+        --bulma-navbar-s: 0% !important;
+        --bulma-navbar-item-color-l: 90% !important;
+    }
+
+    .navbar-item:hover,
+    .navbar-link:hover {
+        background-color: hsla(var(--bulma-navbar-h), var(--bulma-navbar-s), var(--bulma-navbar-item-color-l), 0.1) !important;
+    }
+}
+
+.hero.is-info.custom {
+    background-color: var(--bulma-info) !important;
+    color: var(--bulma-info-invert) !important;
+}
+
 .product-row>.block:not(:last-child)>.columns {
     border-bottom: 1px solid var(--bulma-hr-background-color);
 }

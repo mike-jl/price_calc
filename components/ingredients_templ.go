@@ -35,7 +35,7 @@ func IngredientsTable(ingredients []db.IngredientWithPrices, units services.Unit
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"hero is-info\"><form hx-put=\"/ingredient\" hx-swap=\"afterbegin\" hx-target=\"#ingredient-table-body\"><div class=\"hero-body\"><div class=\"field\"><label class=\"label\">New Ingredient</label><div class=\"field has-addons\"><div class=\"control\"><input class=\"input\" type=\"text\" placeholder=\"Ingredient Name\" name=\"name\"></div><div class=\"control\"><button class=\"button is-success\" type=\"submit\">Add</button></div></div></div></div></form></section><section class=\"section product-row\" id=\"ingredient-table-body\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"hero is-info custom\"><form hx-put=\"/ingredient\" hx-swap=\"afterbegin\" hx-target=\"#ingredient-table-body\"><div class=\"hero-body\"><div class=\"field\"><label class=\"label\">New Ingredient</label><div class=\"field has-addons\"><div class=\"control\"><input class=\"input\" type=\"text\" placeholder=\"Ingredient Name\" name=\"name\"></div><div class=\"control\"><button class=\"button is-success\" type=\"submit\">Add</button></div></div></div></div></form></section><section class=\"section product-row\" id=\"ingredient-table-body\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

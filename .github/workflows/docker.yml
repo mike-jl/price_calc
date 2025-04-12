@@ -51,6 +51,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.vars.outputs.image_tags }}
+          tags: ${{ steps.vars.outputs.tags }}
           platforms: linux/amd64,linux/arm64
 

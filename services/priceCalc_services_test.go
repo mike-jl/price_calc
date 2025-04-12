@@ -508,10 +508,11 @@ func TestSyncIngredientPrice(t *testing.T) {
 				"expected price insert to be called",
 			)
 			if assert.NotNil(t, tc.row.Quantity, "tc.row.Quantity should not be nil") {
-				assert.Equal(
+				assert.InDelta(
 					t,
 					tc.params.Quantity,
 					*tc.row.Quantity,
+					0.0001,
 					"expected quantity to be equal",
 				)
 			}
@@ -522,7 +523,13 @@ func TestSyncIngredientPrice(t *testing.T) {
 					"if tc.params.Price is not nil, tc.row.Price should not be nil",
 				) {
 					expectedPrice := (*tc.params.Price * tc.unit.Factor) / tc.params.Quantity
-					assert.Equal(t, expectedPrice, *tc.row.Price, "expected price to be equal")
+					assert.InDelta(
+						t,
+						expectedPrice,
+						*tc.row.Price,
+						0.0001,
+						"expected price to be equal",
+					)
 				}
 			} else {
 				assert.Nil(t, tc.row.Price, "tc.input.Price should nil", "if tc.params.Price is nil, tc.row.Price should be nil")

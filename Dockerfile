@@ -12,6 +12,13 @@ RUN npm run build
 FROM golang:1.24 AS backend
 
 ARG TARGETARCH
+ENV GOARCH=$TARGETARCH
+ENV CGO_ENABLED=1
+
+ARG ZIGTARGET
+ENV CC="zig cc -target=${ZIGTARGET}"
+
+RUN go build -o main .
 
 # Install zig (lightweight and cross-compiling friendly)
 RUN apt-get update && apt-get install -y wget xz-utils && \

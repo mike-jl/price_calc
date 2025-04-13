@@ -29,10 +29,15 @@ jobs:
         with:
           go-version: 1.24
 
-      - name: Install musl-tools for CGO cross-compilation
+      - name: Install cross compiler
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu gcc-multilib
+          if [[ "${{ matrix.arch }}" == "arm64" ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          else
+            sudo apt-get install -y gcc
+          fi
+
 
       - name: Build Go binary
         run: |

@@ -15,7 +15,7 @@ ARG TARGETARCH
 
 # Install zig (lightweight and cross-compiling friendly)
 RUN apt-get update && apt-get install -y wget xz-utils && \
-    wget https://ziglang.org/builds/zig-linux-x86_64-0.11.0.tar.xz && \
+    wget https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz && \
     tar -xf zig-linux-x86_64-0.11.0.tar.xz && \
     mv zig-linux-x86_64-0.11.0 /zig
 

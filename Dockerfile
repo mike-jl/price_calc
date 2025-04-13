@@ -11,6 +11,8 @@ RUN npm run build
 # --- Stage 2: Go Backend Build ---
 FROM golang:1.24 AS backend
 
+ARG TARGETARCH
+
 RUN apt-get update && apt-get install -y gcc libc6-dev
 
 WORKDIR /app
@@ -20,7 +22,8 @@ RUN go mod download
 
 COPY . .
 ENV CGO_ENABLED=1
-RUN go build -o main .
+
+RUN GOARCH=$TARGETARCH go build -o main .
 
 # --- Stage 3: Final Image ---
 FROM debian:bookworm-slim

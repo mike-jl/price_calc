@@ -13,6 +13,10 @@ jobs:
   docker:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,7 +36,7 @@ jobs:
         run: |
           IMAGE=ghcr.io/${{ github.repository }}
           TAGS=()
-          
+
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
             TAGS+=("${IMAGE}:${VERSION}")
@@ -54,6 +58,6 @@ jobs:
           tags: ${{ steps.vars.outputs.tags }}
           platforms: linux/amd64,linux/arm64
           build-args: |
-                      TARGETARCH
-
+            TARGETARCH=${{ matrix.arch }}
+            ZIGTARGET=${{ matrix.arch == 'amd64' && 'x86_64-linux-musl' || 'aarch64-linux-musl' }}
 

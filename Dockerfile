@@ -30,10 +30,23 @@ WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . .
 
-RUN go build -o main .
+# Determine the Zig target based on the Go arch
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+      export GOARCH=amd64 && \
+      export CC="zig cc" && \
+      export CGO_ENABLED=1 && \
+      export CFLAGS="--target=x86_64-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+      export GOARCH=arm64 && \
+      export CC="zig cc" && \
+      export CGO_ENABLED=1 && \
+      export CFLAGS="--target=aarch64-linux-musl"; \
+    else \
+      echo "Unsupported arch: $TARGETARCH" && exit 1; \
+    fi && \
+    go build -v -o main .
 
 # --- Stage 3: Final Image ---
 FROM debian:bookworm-slim

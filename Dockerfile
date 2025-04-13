@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install -y sqlite3 libsqlite3-0 && rm -rf /var/lib
 
 WORKDIR /root
 
+# Ensure db directory exists (since it's .gitignored and not copied)
+RUN mkdir -p ./db
+
 # Copy Go binary
 COPY --from=backend /app/main .
 

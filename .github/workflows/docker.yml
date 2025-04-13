@@ -12,24 +12,34 @@ permissions:
 jobs:
   docker:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         arch: [amd64, arm64]
+
+    env:
+      GOOS: linux
+      CGO_ENABLED: 1
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          go-version: 1.24
+
+      - name: Install musl-tools for CGO cross-compilation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu gcc-multilib
+
+      - name: Build Go binary
+        run: |
+          mkdir -p dist/${{ matrix.arch }}
+          GOARCH=${{ matrix.arch }} \
+          CC=${{ matrix.arch == 'arm64' && 'aarch64-linux-gnu-gcc' || 'gcc' }} \
+          go build -o dist/${{ matrix.arch }}/main .
 
       - name: Set image tags
         id: vars
@@ -50,14 +60,23 @@ jobs:
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
           { printf "tags<<EOF\n"; printf "%s\n" "${TAGS[@]}"; echo "EOF"; } >> $GITHUB_OUTPUT
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ steps.vars.outputs.tags }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           build-args: |
             TARGETARCH=${{ matrix.arch }}
-            ZIGTARGET=${{ matrix.arch == 'amd64' && 'x86_64-linux-musl' || 'aarch64-linux-musl' }}
 

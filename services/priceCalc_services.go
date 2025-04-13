@@ -36,7 +36,7 @@ var ErrNoRowsAffected = errors.New("no rows affected")
 func NewPriceCalcService(log *slog.Logger) (*PriceCalcService, error) {
 	ctx := context.Background()
 
-	sql, err := sql.Open("sqlite", "db.sqlite3?_foreign_keys=on")
+	sql, err := sql.Open("sqlite", "db/db.sqlite3?_foreign_keys=on")
 	if err != nil {
 		return nil, err
 	}

@@ -19,6 +19,10 @@ RUN mkdir -p ./db
 # Copy statically linked Go binary (uses modernc.org/sqlite)
 ARG TARGETARCH
 COPY dist/${TARGETARCH}/main .
+RUN chmod +x ./main
+
+RUN apk add --no-cache file
+RUN file ./main
 
 # Copy frontend assets
 COPY --from=frontend /app/assets ./assets

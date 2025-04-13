@@ -11,8 +11,8 @@ import (
 
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/database"
+	_ "modernc.org/sqlite"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/mike-jl/price_calc/db"
 	"github.com/mike-jl/price_calc/internal/utils"
 )
@@ -36,7 +36,7 @@ var ErrNoRowsAffected = errors.New("no rows affected")
 func NewPriceCalcService(log *slog.Logger) (*PriceCalcService, error) {
 	ctx := context.Background()
 
-	sql, err := sql.Open("sqlite3", "db/db.sqlite3?_foreign_keys=on")
+	sql, err := sql.Open("sqlite3", "db.sqlite3?_foreign_keys=on")
 	if err != nil {
 		return nil, err
 	}

@@ -9,23 +9,21 @@ RUN npm install
 RUN npm run build
 
 # --- Stage 2: Final runtime image ---
-FROM debian:bookworm-slim
-
-RUN apt-get update && apt-get install -y sqlite3 libsqlite3-0 && rm -rf /var/lib/apt/lists/*
+FROM alpine:latest
 
 WORKDIR /root
 
-# Ensure db directory exists (since it's .gitignored and not copied)
+# Create db dir (ignored by Git, needed at runtime)
 RUN mkdir -p ./db
 
-# Copy precompiled Go binary
+# Copy statically linked Go binary (uses modernc.org/sqlite)
 ARG TARGETARCH
 COPY dist/${TARGETARCH}/main .
 
-# Copy static assets (built JS, CSS)
+# Copy frontend assets
 COPY --from=frontend /app/assets ./assets
 
-# Copy runtime data (db etc.)
+# Copy runtime data
 COPY ./data ./data
 
 EXPOSE 42069

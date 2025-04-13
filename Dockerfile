@@ -18,8 +18,6 @@ ENV CGO_ENABLED=1
 ARG ZIGTARGET
 ENV CC="zig cc -target=${ZIGTARGET}"
 
-RUN go build -o main .
-
 # Install zig (lightweight and cross-compiling friendly)
 RUN apt-get update && apt-get install -y wget xz-utils && \
     wget https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz && \
@@ -34,11 +32,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-
-# Use zig as the C compiler for cross-compilation
-ENV CGO_ENABLED=1
-ENV CC="zig cc -target $TARGETARCH-linux-musl"
-ENV GOARCH=$TARGETARCH
 
 RUN go build -o main .
 

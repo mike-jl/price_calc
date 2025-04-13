@@ -1,0 +1,82 @@
+import { IngredientsData, IngredientsViewModel, IngredientExtended, IngredientWithPrice } from "./types/ingredients";
+import { Unit } from "./types/common";
+import { createEditingHelpers } from "./utils";
+
+export function getIngredientsData(): IngredientsData {
+    const vmText = document.getElementById('viewModel')!.textContent!;
+    const parsedVm: IngredientsViewModel = JSON.parse(vmText);
+    console.log(parsedVm);
+
+    return {
+        ...parsedVm,
+        newIngredientType: "price",
+        ingredients_ext: [],
+        ingredientBackup: {},
+        startEditing: () => { },
+        cancelEditing: () => { },
+        removeItem: () => { },
+
+        init(): void {
+            this.ingredients_ext = (this.ingredients ?? []).map((ingredient) =>
+                this.modifyIngredient(ingredient)
+            );
+            const helpers = createEditingHelpers(this.ingredients_ext, this.ingredientBackup);
+            this.startEditing = helpers.startEditing;
+            this.cancelEditing = helpers.cancelEditing;
+            this.removeItem = helpers.removeItem;
+
+            window.addEventListener("ingredient-added", (e) => {
+                const { detail } = e as CustomEvent<{ newIngredient: IngredientWithPrice }>;
+                const newIngredient = detail.newIngredient;
+                console.log(newIngredient);
+                this.ingredients_ext.push(
+                    this.modifyIngredient(newIngredient)
+                );
+            });
+        },
+
+        getFilteredUnitsForUnitId(unitId: number): Unit[] {
+            const unit = this.units.find(u => u.id === unitId);
+            if (!unit) return [];
+            const baseUnitId = unit.base_unit_id ?? unit.id;
+            console.log(baseUnitId);
+            console.log(unitId);
+            const units = this.units.filter(
+                u => u.id === baseUnitId || u.base_unit_id === baseUnitId
+            );
+            console.log(units);
+            return units;
+        },
+
+        setIngredientPrice(ingredient: IngredientExtended): void {
+            const ingredientPrice = ingredient.price;
+            const unit = this.units.find(u => u.id === ingredientPrice.unit_id)!;
+            const parsed = parseFloat(ingredient.displayPrice);
+            if (!isNaN(parsed)) {
+                ingredientPrice.price = (parsed / ingredientPrice.quantity) * unit.factor;
+                console.log(ingredientPrice.price);
+            }
+        },
+
+        setIngredientQuantity(ingredient: IngredientExtended): void {
+            const parsed = parseFloat(ingredient.displayQuantity);
+            if (!isNaN(parsed)) ingredient.price.quantity = parsed
+        },
+
+        modifyIngredient(ingredient: IngredientWithPrice): IngredientExtended {
+            const isBase = ingredient.price.base_product_id === null;
+            const ingredientPrice = ingredient.price;
+            const unit = this.units.find(u => u.id === ingredientPrice.unit_id)!;
+            const displayPrice = ((ingredientPrice.price / unit.factor) * ingredientPrice.quantity).toFixed(2);
+            return {
+                ...ingredient,
+                isBase: isBase,
+                editing: false,
+                displayPrice: displayPrice,
+                displayQuantity: ingredientPrice.quantity.toFixed(2),
+                unit: unit,
+            };
+        },
+
+    };
+}

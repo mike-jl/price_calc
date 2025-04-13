@@ -1,4 +1,4 @@
-assets/js/*
+assets/vite/*
 tmp
 *.db
 *.sqlite3

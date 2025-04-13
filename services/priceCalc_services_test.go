@@ -153,7 +153,7 @@ func TestParseIngredientsWithPriceUnitRow(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := pc.parseIngredientsWithPriceUnitRow(tc.input, ctx)
+			result, err := pc.parseIngredientsWithPriceUnitRow(ctx, tc.input)
 			if tc.expectError {
 				assert.Error(t, err)
 				return
@@ -453,6 +453,34 @@ func TestSyncIngredientPrice(t *testing.T) {
 			},
 		},
 		{
+			name:                    "row id and params id are different, should error",
+			expectError:             true,
+			expectPriceInsertCalled: true,
+			row: db.GetIngredientsWithPriceUnitRow{
+				ID:            1,
+				Name:          "Flour",
+				PriceID:       utils.Ptr(int64(101)),
+				TimeStamp:     nil,
+				Price:         nil,
+				Quantity:      utils.Ptr(1.0),
+				UnitID:        utils.Ptr(int64(1)),
+				BaseProductID: utils.Ptr(int64(16)),
+			},
+			params: UpdateIngredientParams{
+				ID:            10,
+				Name:          "Flour",
+				Price:         nil,
+				Quantity:      1.1,
+				UnitID:        1,
+				BaseProductID: utils.Ptr(int64(16)),
+			},
+			unit: db.Unit{
+				ID:     1,
+				Name:   "unit",
+				Factor: 1,
+			},
+		},
+		{
 			name:                    "price is nil, baseproduct unchanged, quantity changed, should insert",
 			expectError:             false,
 			expectPriceInsertCalled: true,
@@ -495,7 +523,7 @@ func TestSyncIngredientPrice(t *testing.T) {
 			qtx := &mockSyncIngredientPriceDb{
 				unit: tc.unit,
 			}
-			err := pc.syncIngredientPrice(ctx, qtx, &tc.row, tc.params)
+			err := pc.insertIngredientPrice(ctx, qtx, &tc.row, tc.params)
 			if tc.expectError {
 				assert.Error(t, err, "expected error")
 				return
@@ -533,6 +561,13 @@ func TestSyncIngredientPrice(t *testing.T) {
 				}
 			} else {
 				assert.Nil(t, tc.row.Price, "tc.input.Price should nil", "if tc.params.Price is nil, tc.row.Price should be nil")
+			}
+			if tc.params.BaseProductID == nil {
+				assert.Nil(t, tc.row.BaseProductID, "tc.row.BaseProductID should be nil")
+			} else {
+				if assert.NotNil(t, tc.row.BaseProductID, "tc.row.BaseProductID should not be nil") {
+					assert.Equal(t, *tc.params.BaseProductID, *tc.row.BaseProductID, "expected BaseProductID to be equal")
+				}
 			}
 		})
 	}

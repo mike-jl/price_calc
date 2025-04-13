@@ -344,8 +344,7 @@ templ IngredientUsageRowEdit() {
 							x-model="usage.displayAmount"
 							@input="
 							const parsed = parseFloat(usage.displayAmount);
-							if (!isNaN(parsed)) usage.quantity = parsed / usage.unit.factor;
-						  "
+							if (!isNaN(parsed)) usage.quantity = parsed / usage.unit.factor; "
 						/>
 					</p>
 					<p class="control">

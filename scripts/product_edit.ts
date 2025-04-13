@@ -2,11 +2,11 @@ import Alpine from "alpinejs";
 import {
     ProductEditViewModel,
     ProductEditData,
-    Unit,
     IngredientUsageExtended,
     IngredientUsage,
-    IngredientWithPrices
 } from "./types/product_edit"
+
+import { Unit, IngredientWithPrices } from "./types/common";
 
 export function getProductEditData(): ProductEditData {
     const vmText = document.getElementById('viewModel')!.textContent!;

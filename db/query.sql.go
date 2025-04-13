@@ -716,6 +716,21 @@ func (q *Queries) GetUnits(ctx context.Context) ([]Unit, error) {
 	return items, nil
 }
 
+const insertIngredient = `-- name: InsertIngredient :one
+;
+
+insert into ingredients(name)
+values (?)
+returning id, name
+`
+
+func (q *Queries) InsertIngredient(ctx context.Context, name string) (Ingredient, error) {
+	row := q.db.QueryRowContext(ctx, insertIngredient, name)
+	var i Ingredient
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
 const insertProductCost = `-- name: InsertProductCost :execrows
 ;
 
@@ -814,21 +829,6 @@ func (q *Queries) PutIngredeintUsage(ctx context.Context, arg PutIngredeintUsage
 		&i.IngredientID,
 		&i.ProductID,
 	)
-	return i, err
-}
-
-const putIngredient = `-- name: PutIngredient :one
-;
-
-insert into ingredients(name)
-values (?)
-returning id, name
-`
-
-func (q *Queries) PutIngredient(ctx context.Context, name string) (Ingredient, error) {
-	row := q.db.QueryRowContext(ctx, putIngredient, name)
-	var i Ingredient
-	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
 

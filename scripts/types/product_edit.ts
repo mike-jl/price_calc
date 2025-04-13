@@ -1,3 +1,5 @@
+import { IngredientWithPrices, Unit } from './common';
+
 export interface Product {
     id: number;
     name: string;
@@ -23,33 +25,6 @@ export interface IngredientUsage {
     unit_id: number;
     ingredient_id: number;
     product_id: number;
-}
-
-export interface Ingredient {
-    id: number;
-    name: string;
-}
-
-export interface IngredientPrice {
-    id: number;
-    time_stamp: number;
-    price: number;
-    quantity: number;
-    unit_id: number;
-    ingredient_id: number;
-    base_product_id: number | null;
-}
-
-export interface IngredientWithPrices {
-    ingredient: Ingredient;
-    prices: IngredientPrice[];
-}
-
-export interface Unit {
-    id: number;
-    name: string;
-    base_unit_id: number | null;
-    factor: number;
 }
 
 export interface IngredientUsageExtended extends IngredientUsage {
@@ -83,6 +58,5 @@ export type ProductEditData = ProductEditViewModel & {
     removeUsage: (usageId: number) => void;
     init: () => void;
     modifyIngredientUsage: (usage: IngredientUsage, units: Unit[], ingredients: IngredientWithPrices[]) => IngredientUsageExtended;
-
 };
 

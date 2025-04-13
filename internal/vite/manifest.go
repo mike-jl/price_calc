@@ -20,7 +20,7 @@ var (
 
 func ViteAssetPath(asset string) ViteManifestEntry {
 	manifestOnce.Do(func() {
-		data, err := os.ReadFile("assets/js/.vite/manifest.json")
+		data, err := os.ReadFile("assets/vite/.vite/manifest.json")
 		if err != nil {
 			manifestErr = fmt.Errorf("failed to read manifest: %w", err)
 			return

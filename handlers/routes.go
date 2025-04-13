@@ -3,11 +3,9 @@ package handlers
 import "github.com/labstack/echo/v4"
 
 func SetupRoutes(e *echo.Echo, ph *PriceCalcHandler) {
-	e.GET("/", ph.index)
-	e.PUT("/ingredient", ph.putIngredient)
-	e.PUT("/ingredient-price/:ingredient-id", ph.putIngredientPrice)
-	e.GET("/ingredient/:ingredient-id/edit", ph.getIngredientEdit)
-	e.GET("/ingredient/:ingredient-id", ph.getIngredient)
+	e.GET("/", ph.getIngredients)
+	e.POST("/ingredient", ph.postIngredient)
+	e.POST("/ingredient-price/:ingredient-id", ph.postIngredientPrice)
 	e.DELETE("/ingredient/:ingredient-id", ph.deleteIngredient)
 	e.GET("/categories", ph.categories)
 	e.GET("/products", ph.products)

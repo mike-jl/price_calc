@@ -20,7 +20,7 @@ left join
 where (:ingredient_id is null or i.id =:ingredient_id)
 ;
 
--- name: PutIngredient :one
+-- name: InsertIngredient :one
 insert into ingredients(name)
 values (?)
 returning *

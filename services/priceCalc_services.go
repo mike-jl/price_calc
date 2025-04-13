@@ -136,8 +136,8 @@ func (pc *PriceCalcService) checkCircular(
 }
 
 func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
+	ctx context.Context,
 	ingredients []db.GetIngredientsWithPriceUnitRow,
-	c context.Context,
 ) ([]db.IngredientWithPrices, error) {
 	out := []db.IngredientWithPrices{}
 	for _, ingredientRow := range ingredients {
@@ -175,7 +175,7 @@ func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
 
 	}
 
-	err := pc.baseProductPriceResolver.resolveBaseProductPrices(out, c)
+	err := pc.baseProductPriceResolver.resolveBaseProductPrices(out, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (pc *PriceCalcService) resolveBaseProductPrices(
 				if err == sql.ErrNoRows {
 					// this should not happen, but if it does, calculate the cost and create the row
 					var cost float64
-					cost, err = pc.UpdateProductCost(*price.BaseProductID, ctx)
+					cost, err = pc.UpdateProductCost(ctx, pc.queries, *price.BaseProductID)
 					if err != nil {
 						return err
 					}
@@ -216,21 +216,17 @@ func (pc *PriceCalcService) resolveBaseProductPrices(
 }
 
 func (pc *PriceCalcService) UpdateProductCost(
+	ctx context.Context,
+	qtx *db.Queries,
 	productID int64,
-	ctx ...context.Context,
 ) (float64, error) {
-	c := context.Background()
-	if len(ctx) > 0 {
-		c = ctx[0]
-	}
-
 	visited := make(map[int64]bool)
-	cost, err := pc.calculateProductCost(productID, visited, c)
+	cost, err := pc.calculateProductCost(productID, visited, ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	_, err = pc.queries.InsertProductCost(c, db.InsertProductCostParams{
+	_, err = qtx.InsertProductCost(ctx, db.InsertProductCostParams{
 		ProductID: productID,
 		Cost:      cost,
 	})
@@ -243,11 +239,11 @@ func (pc *PriceCalcService) UpdateProductCost(
 			continue
 		}
 
-		cost, err = pc.calculateProductCost(id, map[int64]bool{}, c)
+		cost, err = pc.calculateProductCost(id, map[int64]bool{}, ctx)
 		if err != nil {
 			return 0, err
 		}
-		_, err = pc.queries.InsertProductCost(c, db.InsertProductCostParams{
+		_, err = qtx.InsertProductCost(ctx, db.InsertProductCostParams{
 			ProductID: id,
 			Cost:      cost,
 		})
@@ -291,20 +287,18 @@ func (pc *PriceCalcService) calculateProductCost(
 	return totalCost, nil
 }
 
-func (pc *PriceCalcService) GetIngredientsWithPrice() ([]db.IngredientWithPrices, error) {
-	return pc.GetIngredientsWithPrices(1)
+func (pc *PriceCalcService) GetIngredientsWithPrice(
+	ctx context.Context,
+) ([]db.IngredientWithPrices, error) {
+	return pc.GetIngredientsWithPrices(ctx, 1)
 }
 
 func (pc *PriceCalcService) GetIngredientsWithPrices(
+	ctx context.Context,
 	priceLimit int64,
-	ctx ...context.Context,
 ) ([]db.IngredientWithPrices, error) {
-	c := context.Background()
-	if len(ctx) > 0 {
-		c = ctx[0]
-	}
 	ingredients, err := pc.queries.GetIngredientsWithPriceUnit(
-		c,
+		ctx,
 		db.GetIngredientsWithPriceUnitParams{
 			IngredientID: nil,
 			PriceLimit:   priceLimit,
@@ -313,27 +307,23 @@ func (pc *PriceCalcService) GetIngredientsWithPrices(
 	if err != nil {
 		return nil, err
 	}
-	return pc.parseIngredientsWithPriceUnitRow(ingredients, c)
+	return pc.parseIngredientsWithPriceUnitRow(ctx, ingredients)
 }
 
 func (pc *PriceCalcService) GetIngredientWithPrice(
+	ctx context.Context,
 	ingredientId int64,
 ) (*db.IngredientWithPrices, error) {
-	return pc.GetIngredientWithPrices(ingredientId, 1)
+	return pc.GetIngredientWithPrices(ctx, ingredientId, 1)
 }
 
 func (pc *PriceCalcService) GetIngredientWithPrices(
+	ctx context.Context,
 	ingredientId,
 	priceLimit int64,
-	ctx ...context.Context,
 ) (*db.IngredientWithPrices, error) {
-	c := context.Background()
-	if len(ctx) > 0 {
-		c = ctx[0]
-	}
-
 	ingredient, err := pc.queries.GetIngredientsWithPriceUnit(
-		c,
+		ctx,
 		db.GetIngredientsWithPriceUnitParams{
 			IngredientID: ingredientId,
 			PriceLimit:   priceLimit,
@@ -344,8 +334,8 @@ func (pc *PriceCalcService) GetIngredientWithPrices(
 	}
 
 	out, err := pc.parseIngredientsWithPriceUnitRow(
+		ctx,
 		ingredient,
-		c,
 	)
 	if err != nil {
 		return nil, err
@@ -354,13 +344,46 @@ func (pc *PriceCalcService) GetIngredientWithPrices(
 	return &out[0], nil
 }
 
-func (pc *PriceCalcService) PutIngredient(name string) (*db.Ingredient, error) {
-	ctx := context.Background()
-	ingredient, err := pc.queries.PutIngredient(ctx, name)
+func (pc *PriceCalcService) NewIngredient(
+	ctx context.Context,
+	params UpdateIngredientParams,
+) (*db.IngredientWithPrices, error) {
+	tx, err := pc.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &ingredient, nil
+	defer tx.Rollback()
+
+	qtx := pc.queries.WithTx(tx)
+
+	ingredient, err := qtx.InsertIngredient(ctx, params.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	priceRow := db.GetIngredientsWithPriceUnitRow{
+		ID:      ingredient.ID,
+		Name:    ingredient.Name,
+		PriceID: nil,
+	}
+	params.ID = ingredient.ID
+
+	err = pc.insertIngredientPrice(ctx, qtx, &priceRow, params)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	ingredients, err := pc.parseIngredientsWithPriceUnitRow(
+		ctx,
+		[]db.GetIngredientsWithPriceUnitRow{priceRow},
+	)
+
+	return &ingredients[0], nil
 }
 
 func (pc *PriceCalcService) syncIngredientName(
@@ -385,7 +408,7 @@ func (pc *PriceCalcService) syncIngredientName(
 	return nil
 }
 
-type syncIngredientPriceQtx interface {
+type insertIngredientPriceQtx interface {
 	PutIngredientPrice(
 		ctx context.Context,
 		arg db.PutIngredientPriceParams,
@@ -393,15 +416,19 @@ type syncIngredientPriceQtx interface {
 	GetUnit(ctx context.Context, unitID int64) (db.Unit, error)
 }
 
-func (pc *PriceCalcService) syncIngredientPrice(
+func (pc *PriceCalcService) insertIngredientPrice(
 	ctx context.Context,
-	qtx syncIngredientPriceQtx,
+	qtx insertIngredientPriceQtx,
 	row *db.GetIngredientsWithPriceUnitRow,
 	params UpdateIngredientParams,
 ) error {
 	unit, err := qtx.GetUnit(ctx, params.UnitID)
 	if err != nil {
 		return err
+	}
+
+	if row.ID != params.ID {
+		return fmt.Errorf("ingredient id %d does not match row id %d", params.ID, row.ID)
 	}
 
 	if params.Price == nil && params.BaseProductID == nil ||
@@ -451,6 +478,7 @@ func (pc *PriceCalcService) syncIngredientPrice(
 		row.Price = ingredientPrice.Price
 		row.Quantity = &ingredientPrice.Quantity
 		row.UnitID = &ingredientPrice.UnitID
+		row.BaseProductID = ingredientPrice.BaseProductID
 	}
 
 	return nil
@@ -499,7 +527,7 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 		return nil, err
 	}
 
-	err = pc.syncIngredientPrice(ctx, qtx, &ingredientWithPriceRow, params)
+	err = pc.insertIngredientPrice(ctx, qtx, &ingredientWithPriceRow, params)
 	if err != nil {
 		return nil, err
 	}
@@ -512,7 +540,7 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 
 	// update the cost of all products that use this ingredient
 	for _, product := range products {
-		_, err = pc.UpdateProductCost(product.ID, ctx)
+		_, err = pc.UpdateProductCost(ctx, qtx, product.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -525,10 +553,10 @@ func (pc *PriceCalcService) UpdateIngredientWithPrice(
 	}
 
 	out, err := pc.parseIngredientsWithPriceUnitRow(
+		ctx,
 		[]db.GetIngredientsWithPriceUnitRow{
 			db.GetIngredientsWithPriceUnitRow(ingredientWithPriceRow),
 		},
-		ctx,
 	)
 	if err != nil {
 		return nil, err
@@ -589,7 +617,7 @@ func (pc *PriceCalcService) GetProductsWithCost() ([]db.ProductWithCost, error) 
 	for _, product := range products {
 		if product.Cost == nil {
 			// again, not supposed to happen, but if it does, calculate the cost and create the row
-			newCost, err := pc.UpdateProductCost(product.ID, ctx)
+			newCost, err := pc.UpdateProductCost(ctx, pc.queries, product.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -610,12 +638,8 @@ func (pc *PriceCalcService) GetProductsWithCost() ([]db.ProductWithCost, error) 
 	return out, nil
 }
 
-func (pc *PriceCalcService) GetProductNames(ctx ...context.Context) (map[int64]string, error) {
-	c := context.Background()
-	if len(ctx) > 0 {
-		c = ctx[0]
-	}
-	products, err := pc.queries.GetProductNames(c)
+func (pc *PriceCalcService) GetProductNames(ctx context.Context) (map[int64]string, error) {
+	products, err := pc.queries.GetProductNames(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -751,15 +775,10 @@ func (pc *PriceCalcService) PutProduct(name string, categoryId int64) (*db.Produ
 }
 
 func (pc *PriceCalcService) PutIngredientUsage(
+	ctx context.Context,
 	ingredientId, productId, unitId int64,
 	quantity float64,
-	c ...context.Context,
 ) (*db.IngredientUsage, error) {
-	ctx := context.Background()
-	if len(c) > 0 {
-		ctx = c[0]
-	}
-
 	units, err := pc.queries.GetUnits(ctx)
 	if err != nil {
 		return nil, err
@@ -781,7 +800,7 @@ func (pc *PriceCalcService) PutIngredientUsage(
 	if err != nil {
 		return nil, err
 	}
-	_, err = pc.UpdateProductCost(productId, ctx)
+	_, err = pc.UpdateProductCost(ctx, pc.queries, productId)
 	if err != nil {
 		return nil, err
 	}
@@ -814,7 +833,7 @@ func (pc *PriceCalcService) UpdateIngredientUsage(
 		return nil, err
 	}
 
-	_, err = pc.UpdateProductCost(ingredientUsage.ProductID, ctx)
+	_, err = pc.UpdateProductCost(ctx, pc.queries, ingredientUsage.ProductID)
 	if err != nil {
 		return nil, err
 	}
@@ -822,14 +841,16 @@ func (pc *PriceCalcService) UpdateIngredientUsage(
 	return &ingredientUsage, nil
 }
 
-func (pc *PriceCalcService) DeleteIngredientUsage(ingredientUsageId int64) error {
-	ctx := context.Background()
+func (pc *PriceCalcService) DeleteIngredientUsage(
+	ctx context.Context,
+	ingredientUsageId int64,
+) error {
 	productID, err := pc.queries.DeleteIngredientUsage(ctx, ingredientUsageId)
 	if err != nil {
 		return err
 	}
 
-	_, err = pc.UpdateProductCost(productID, ctx)
+	_, err = pc.UpdateProductCost(ctx, pc.queries, productID)
 	if err != nil {
 		return err
 	}

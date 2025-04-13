@@ -19,6 +19,7 @@ func main() {
 
 	app := echo.New()
 	app.Static("/", "assets")
+	app.Static("/assets", "assets/vite/assets")
 	app.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
 		LogURI:      true,

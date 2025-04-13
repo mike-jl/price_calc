@@ -36,64 +36,115 @@ func render(ctx echo.Context, statusCode int, t templ.Component) error {
 	return ctx.HTML(statusCode, buf.String())
 }
 
-func (ph *PriceCalcHandler) index(c echo.Context) error {
-	ingredients, err := ph.service.GetIngredientsWithPrice()
+func (ph *PriceCalcHandler) getIngredients(c echo.Context) error {
+	ingredients, err := ph.service.GetIngredientsWithPrice(c.Request().Context())
 	if err != nil {
 		ph.log.Error(err.Error())
 		return c.NoContent(http.StatusInternalServerError)
 	}
-	products, err := ph.service.GetProductNames()
+	products, err := ph.service.GetProductNames(c.Request().Context())
 	if err != nil {
 		ph.log.Error(err.Error())
 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
 
-	units, err := ph.service.GetUnitsMap(c.Request().Context())
+	units, err := ph.service.GetUnits(c.Request().Context())
 	if err != nil {
 		ph.log.Error(err.Error())
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+	}
+
+	ph.log.Info("get ingredients", "ingredients", ingredients, "products", products, "units", units)
+
+	// Convert the slice of db.IngredientWithPrices to a slice of viewmodels.IngredientWithPrice
+	ingredientWithPrices := make([]viewmodels.IngredientWithPrice, len(ingredients))
+	for i, ingredient := range ingredients {
+		if len(ingredient.Prices) > 0 {
+			ingredientWithPrices[i] = viewmodels.IngredientWithPrice{
+				ID:    ingredient.Ingredient.ID,
+				Name:  ingredient.Ingredient.Name,
+				Price: ingredient.Prices[0],
+			}
+		}
+	}
+
+	viewModel := viewmodels.IngredientsViewModel{
+		Ingredients:  ingredientWithPrices,
+		Units:        units,
+		ProductNames: products,
 	}
 
 	return render(
 		c,
 		http.StatusOK,
-		components.Index(components.IngredientsTable(ingredients, units, products)),
+		components.Index(
+			components.Ingredients(viewModel),
+		),
 	)
 }
 
-func (ph *PriceCalcHandler) putIngredient(c echo.Context) error {
-	ph.log.Info("put ingredient")
-	name := c.FormValue("name")
-	ingredient, err := ph.service.PutIngredient(name)
-	if err != nil {
-		return err
+func (ph *PriceCalcHandler) postIngredient(c echo.Context) error {
+	name := strings.TrimSpace(c.FormValue("name"))
+	if name == "" {
+		return c.String(http.StatusBadRequest, "ingredient name is empty")
 	}
-	ingredientWithPrice := db.IngredientWithPrices{
-		Ingredient: db.Ingredient{
-			ID:   ingredient.ID,
-			Name: ingredient.Name,
+
+	var price *float64 = nil
+	var baseProductId *int64 = nil
+
+	ingType := strings.TrimSpace(c.FormValue("type"))
+	switch ingType {
+	case "price":
+		priceValue, err := strconv.ParseFloat(c.FormValue("price"), 64)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "could not parse price "+err.Error())
+		}
+		price = &priceValue
+	case "product":
+		baseProductIdValue, err := strconv.ParseInt(c.FormValue("base-product-id"), 10, 64)
+		if err != nil {
+			c.String(http.StatusBadRequest, "could not parse base product id "+err.Error())
+		}
+		baseProductId = &baseProductIdValue
+	default:
+		return c.String(http.StatusBadRequest, "invalid ingredient type "+ingType)
+	}
+
+	quantity, err := strconv.ParseFloat(c.FormValue("quantity"), 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse quantity "+err.Error())
+	}
+
+	unitId, err := strconv.ParseInt(c.FormValue("unit"), 10, 64)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
+	}
+
+	ingredient, err := ph.service.NewIngredient(
+		c.Request().Context(),
+		services.UpdateIngredientParams{
+			ID:            0,
+			Name:          name,
+			Price:         price,
+			Quantity:      quantity,
+			UnitID:        unitId,
+			BaseProductID: baseProductId,
 		},
-	}
-	products, err := ph.service.GetProductNames()
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
-	}
-
-	units, err := ph.service.GetUnitsMap(c.Request().Context())
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
-	}
-
-	return render(
-		c,
-		http.StatusCreated,
-		components.IngredientRow(ingredientWithPrice, units, products),
 	)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "could not insert ingredient "+err.Error())
+	}
+
+	ingredientWithPrice := viewmodels.IngredientWithPrice{
+		ID:    ingredient.Ingredient.ID,
+		Name:  ingredient.Ingredient.Name,
+		Price: ingredient.Prices[0],
+	}
+
+	return render(c, http.StatusCreated, components.NewIngredient(ingredientWithPrice))
 }
 
-func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
+func (ph *PriceCalcHandler) postIngredientPrice(c echo.Context) error {
 	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
@@ -133,9 +184,7 @@ func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
 
 	name := c.FormValue("name")
 
-	// ingredientWithPrice, err := ph.service.UpdateIngredientWithPrice(
-	// 	ingredientId, name, pricePtr, quantity, unitId, baseProductIdPtr, c.Request().Context())
-	ingredientWithPrice, err := ph.service.UpdateIngredientWithPrice(
+	_, err = ph.service.UpdateIngredientWithPrice(
 		c.Request().Context(),
 		services.UpdateIngredientParams{
 			ID:            ingredientId,
@@ -150,85 +199,177 @@ func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not update ingredient "+err.Error())
 	}
 
-	products, err := ph.service.GetProductNames()
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
-	}
-
-	units, err := ph.service.GetUnitsMap(c.Request().Context())
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
-	}
-
-	return render(
-		c,
-		http.StatusCreated,
-		components.IngredientRow(*ingredientWithPrice, units, products),
-	)
+	return c.NoContent(http.StatusOK)
 }
 
-func (ph *PriceCalcHandler) getIngredientEdit(c echo.Context) error {
-	ph.log.Info("get ingredient edit")
-	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
-	if err != nil {
-		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
-	}
+// func (ph *PriceCalcHandler) putIngredient(c echo.Context) error {
+// 	ph.log.Info("put ingredient")
+// 	name := c.FormValue("name")
+// 	ingredient, err := ph.service.PutIngredient(name)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	ingredientWithPrice := db.IngredientWithPrices{
+// 		Ingredient: db.Ingredient{
+// 			ID:   ingredient.ID,
+// 			Name: ingredient.Name,
+// 		},
+// 	}
+// 	products, err := ph.service.GetProductNames(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+// 	}
+//
+// 	units, err := ph.service.GetUnitsMap(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+// 	}
+//
+// 	return render(
+// 		c,
+// 		http.StatusCreated,
+// 		components.IngredientRow(ingredientWithPrice, units, products),
+// 	)
+// }
 
-	ingredient, err := ph.service.GetIngredientWithPrices(ingredientId, 10)
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "could not get ingredient "+err.Error())
-	}
+// func (ph *PriceCalcHandler) putIngredientPrice(c echo.Context) error {
+// 	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
+// 	if err != nil {
+// 		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
+// 	}
+// 	quantity, err := strconv.ParseFloat(c.FormValue("quantity"), 64)
+// 	if err != nil {
+// 		return c.String(http.StatusBadRequest, "could not parse quantity "+err.Error())
+// 	}
+// 	unitId, err := strconv.ParseInt(c.FormValue("unit"), 10, 64)
+// 	if err != nil {
+// 		return c.String(http.StatusBadRequest, "could not parse unit id "+err.Error())
+// 	}
+//
+// 	ingType := c.FormValue("type")
+// 	if ingType != "price" && ingType != "product" {
+// 		return c.String(http.StatusBadRequest, "could not parse type "+ingType)
+// 	}
+// 	price := float64(0)
+// 	pricePtr := &price
+// 	baseProductId := int64(0)
+// 	baseProductIdPtr := &baseProductId
+//
+// 	switch ingType {
+// 	case "price":
+// 		price, err = strconv.ParseFloat(c.FormValue("price"), 64)
+// 		if err != nil {
+// 			return c.String(http.StatusBadRequest, "could not parse price "+err.Error())
+// 		}
+// 		baseProductIdPtr = nil
+// 	case "product":
+// 		baseProductId, err = strconv.ParseInt(c.FormValue("base-product-id"), 10, 64)
+// 		if err != nil {
+// 			return c.String(http.StatusBadRequest, "could not parse base product id "+err.Error())
+// 		}
+// 		pricePtr = nil
+// 	}
+//
+// 	name := c.FormValue("name")
+//
+// 	// ingredientWithPrice, err := ph.service.UpdateIngredientWithPrice(
+// 	// 	ingredientId, name, pricePtr, quantity, unitId, baseProductIdPtr, c.Request().Context())
+// 	ingredientWithPrice, err := ph.service.UpdateIngredientWithPrice(
+// 		c.Request().Context(),
+// 		services.UpdateIngredientParams{
+// 			ID:            ingredientId,
+// 			Name:          name,
+// 			Price:         pricePtr,
+// 			Quantity:      quantity,
+// 			UnitID:        unitId,
+// 			BaseProductID: baseProductIdPtr,
+// 		},
+// 	)
+// 	if err != nil {
+// 		return c.String(http.StatusInternalServerError, "could not update ingredient "+err.Error())
+// 	}
+//
+// 	products, err := ph.service.GetProductNames(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+// 	}
+//
+// 	units, err := ph.service.GetUnitsMap(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+// 	}
+//
+// 	return render(
+// 		c,
+// 		http.StatusCreated,
+// 		components.IngredientRow(*ingredientWithPrice, units, products),
+// 	)
+// }
 
-	products, err := ph.service.GetProductNames()
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
-	}
+// func (ph *PriceCalcHandler) getIngredientEdit(c echo.Context) error {
+// 	ph.log.Info("get ingredient edit")
+// 	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
+// 	if err != nil {
+// 		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
+// 	}
+//
+// 	ingredient, err := ph.service.GetIngredientWithPrices(ingredientId, 10)
+// 	if err != nil {
+// 		return c.String(http.StatusInternalServerError, "could not get ingredient "+err.Error())
+// 	}
+//
+// 	products, err := ph.service.GetProductNames(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+// 	}
+//
+// 	units, err := ph.service.GetUnitsMap(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+// 	}
+//
+// 	return render(
+// 		c,
+// 		http.StatusOK,
+// 		components.IngredientRowEdit(*ingredient, units, products),
+// 	)
+// }
 
-	units, err := ph.service.GetUnitsMap(c.Request().Context())
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
-	}
-
-	return render(
-		c,
-		http.StatusOK,
-		components.IngredientRowEdit(*ingredient, units, products),
-	)
-}
-
-func (ph *PriceCalcHandler) getIngredient(c echo.Context) error {
-	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
-	if err != nil {
-		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
-	}
-
-	ingredient, err := ph.service.GetIngredientWithPrices(ingredientId, 10)
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "could not get ingredient "+err.Error())
-	}
-
-	products, err := ph.service.GetProductNames()
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
-	}
-
-	units, err := ph.service.GetUnitsMap(c.Request().Context())
-	if err != nil {
-		ph.log.Error(err.Error())
-		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
-	}
-
-	return render(
-		c,
-		http.StatusOK,
-		components.IngredientRow(*ingredient, units, products),
-	)
-}
+// func (ph *PriceCalcHandler) getIngredient(c echo.Context) error {
+// 	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
+// 	if err != nil {
+// 		return c.String(http.StatusBadRequest, "could not parse ingredient id "+err.Error())
+// 	}
+//
+// 	ingredient, err := ph.service.GetIngredientWithPrices(ingredientId, 10)
+// 	if err != nil {
+// 		return c.String(http.StatusInternalServerError, "could not get ingredient "+err.Error())
+// 	}
+//
+// 	products, err := ph.service.GetProductNames(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
+// 	}
+//
+// 	units, err := ph.service.GetUnitsMap(c.Request().Context())
+// 	if err != nil {
+// 		ph.log.Error(err.Error())
+// 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
+// 	}
+//
+// 	return render(
+// 		c,
+// 		http.StatusOK,
+// 		components.IngredientRow(*ingredient, units, products),
+// 	)
+// }
 
 func (ph *PriceCalcHandler) deleteIngredient(c echo.Context) error {
 	ingredientId, err := strconv.ParseInt(c.Param("ingredient-id"), 10, 64)
@@ -378,7 +519,7 @@ func (ph *PriceCalcHandler) getProductEditPage(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get categories "+err.Error())
 	}
-	ingredients, err := ph.service.GetIngredientsWithPrice()
+	ingredients, err := ph.service.GetIngredientsWithPrice(c.Request().Context())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get ingredients "+err.Error())
 	}
@@ -500,6 +641,7 @@ func (ph *PriceCalcHandler) putIngredientUsage(c echo.Context) error {
 
 	baseQuantity := quantity / units[unitId].Factor
 	ingredientUsage, err := ph.service.PutIngredientUsage(
+		c.Request().Context(),
 		ingredientId,
 		productId,
 		unitId,
@@ -538,7 +680,7 @@ func (ph *PriceCalcHandler) getIngredientUsageEdit(c echo.Context) error {
 
 	ingredientId := ingredientUsage.IngredientID
 
-	ingredient, err := ph.service.GetIngredientWithPrice(ingredientId)
+	ingredient, err := ph.service.GetIngredientWithPrice(c.Request().Context(), ingredientId)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get ingredient "+err.Error())
 	}
@@ -607,7 +749,7 @@ func (ph *PriceCalcHandler) deleteIngredientUsage(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "could not parse ingredient usage id "+err.Error())
 	}
-	err = ph.service.DeleteIngredientUsage(ingredientUsageId)
+	err = ph.service.DeleteIngredientUsage(c.Request().Context(), ingredientUsageId)
 	if err != nil {
 		return c.String(
 			http.StatusInternalServerError,

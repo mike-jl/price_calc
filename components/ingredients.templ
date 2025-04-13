@@ -1,326 +1,411 @@
 package components
 
 import (
-	"fmt"
-	"github.com/mike-jl/price_calc/db"
-	"github.com/mike-jl/price_calc/services"
+	"github.com/mike-jl/price_calc/viewModels"
 )
 
-templ IngredientsTable(ingredients []db.IngredientWithPrices, units services.UnitsMap, products map[int64]string) {
-	<section class="section hero is-info custom block">
-		<div class="container">
-			<div class="hero-body p-0">
-				<form hx-put="/ingredient" hx-swap="afterbegin" hx-target="#ingredient-table-body">
-					<div class="field">
-						<label class="label">New Ingredient</label>
-						<div class="field has-addons">
-							<div class="control">
-								<input class="input" type="text" placeholder="Ingredient Name" name="name"/>
-							</div>
-							<div class="control">
-								<button class="button is-success" type="submit">
-									Add
-								</button>
+templ Ingredients(viewModel viewmodels.IngredientsViewModel) {
+	@templ.JSONScript("viewModel", viewModel)
+	<div x-data="ingredientsData">
+		<section class="section hero is-info custom block">
+			<div class="container">
+				<div class="block">
+					<div class="columns  is-align-items-flex-end">
+						<div class="column">
+							<div class="field">
+								<label class="label">Name</label>
+								<div class="control">
+									<input
+										class="input"
+										form="new-ingredient-form"
+										type="text"
+										name="name"
+									/>
+								</div>
 							</div>
 						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</section>
-	<section class="section">
-		<div class="product-row container" id="ingredient-table-body">
-			for _, ingredient := range ingredients {
-				@IngredientRow(ingredient, units, products)
-			}
-		</div>
-	</section>
-}
-
-templ IngredientRow(ingredient db.IngredientWithPrices, units services.UnitsMap, products map[int64]string) {
-	<div class="block">
-		<div class="columns  is-align-items-flex-end">
-			<div class="column">
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Name</label>
-					<div class="control">
-						<input class="input" type="text" value={ ingredient.Ingredient.Name } disabled/>
-					</div>
-				</div>
-			</div>
-			<div
-				class="column"
-			>
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Type</label>
-					<div class="control is-expanded">
-						<div class="select is-fullwidth">
-							<select
-								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-								name="type"
-								id={ fmt.Sprintf("type-%d", ingredient.Ingredient.ID) }
-								disabled
+						<div
+							class="column"
+						>
+							<div class="field">
+								<label class="label">Type</label>
+								<div class="control is-expanded">
+									<div class="select is-fullwidth">
+										<select
+											form="new-ingredient-form"
+											name="type"
+											x-model="newIngredientType"
+										>
+											<option value="price" selected>Base Ingredient</option>
+											<option value="product">Product</option>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div
+							class="column"
+						>
+							<div class="field">
+								<label class="label">Price / Base Product</label>
+								<template x-if="newIngredientType === 'price'">
+									<div class="field has-addons mb-0">
+										<p class="control is-expanded">
+											<input
+												class="input"
+												type="text"
+												name="price"
+												form="new-ingredient-form"
+											/>
+										</p>
+										<p class="control">
+											<a class="button is-static">€</a>
+										</p>
+									</div>
+								</template>
+								<template x-if="newIngredientType === 'product'">
+									<div class="control is-expanded mb-0">
+										<div class="select is-fullwidth">
+											<select
+												name="base-product-id"
+												form="new-ingredient-form"
+											>
+												<template x-for="( product, id ) in product_names" :key="id">
+													<option :value="id" x-text="product"></option>
+												</template>
+											</select>
+										</div>
+									</div>
+								</template>
+							</div>
+						</div>
+						<div class="column">
+							<div class="field">
+								<label class="label">Quantity</label>
+								<div class="field has-addons">
+									<p class="control is-expanded">
+										<input
+											class="input"
+											type="text"
+											form="new-ingredient-form"
+											name="quantity"
+										/>
+									</p>
+									<p class="control">
+										<span class="select">
+											<select
+												form="new-ingredient-form"
+												name="unit"
+											>
+												<template x-for="unit in units" :key="unit.id">
+													<option :value="unit.id" x-text="unit.name"></option>
+												</template>
+											</select>
+										</span>
+									</p>
+								</div>
+							</div>
+						</div>
+						<form
+							class="column responsive-buttons"
+							id="new-ingredient-form"
+							hx-post="/ingredient"
+							hx-swap="afterbegin"
+							hx-target="#htmx-script-dump"
+						>
+							<button
+								class="button"
 							>
-								if len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil {
-									<option>Product</option>
-								} else {
-									<option>Base Ingredient</option>
-								}
-							</select>
-						</div>
+								Add
+							</button>
+						</form>
 					</div>
 				</div>
 			</div>
-			<div
-				class="column"
-				id={ fmt.Sprintf("ingredient-%d-price", ingredient.Ingredient.ID) }
-			>
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Price / Base Product</label>
-					if len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil {
-						<div class="control is-expanded">
-							<div class="select is-fullwidth">
-								<select disabled>
-									<option>
-										{ products[*ingredient.Prices[0].BaseProductID] }
-									</option>
-								</select>
-							</div>
-						</div>
-					} else {
-						<div class="field has-addons">
-							<p class="control is-expanded">
-								<input
-									class="input"
-									type="text"
-									disabled
-									if len(ingredient.Prices) > 0 && ingredient.Prices[0].Price != nil {
-										value={ fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity) }
-									} else {
-										value=""
-									}
-								/>
-							</p>
-							<p class="control">
-								<a class="button is-static">€</a>
-							</p>
-						</div>
-					}
-				</div>
-			</div>
-			<div class="column">
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Per</label>
-					<div class="field has-addons">
-						<p class="control is-expanded">
-							<input
-								class="input"
-								type="text"
-								disabled
-								if len(ingredient.Prices) > 0 {
-									value={ fmt.Sprintf("%.2f", ingredient.Prices[0].Quantity) }
-								} else {
-									value="N/A"
-								}
-							/>
-						</p>
-						if len(ingredient.Prices) > 0 {
-							<p class="control">
-								<a class="button is-static">{ units[ingredient.Prices[0].UnitID].Name }</a>
-							</p>
-						}
+		</section>
+		<section class="section">
+			<div class="product-row container">
+				<template x-for="(ingredient, i) in ingredients_ext" :key="ingredient.id">
+					<div class="block">
+						<template x-if="!ingredient.editing">
+							@IngredientRow()
+						</template>
+						<template x-if="ingredient.editing">
+							@IngredientRowEdit()
+						</template>
 					</div>
-				</div>
+				</template>
 			</div>
-			<div class="column responsive-buttons">
-				<button
-					class="button"
-					hx-get={ fmt.Sprintf("/ingredient/%d/edit", ingredient.Ingredient.ID) }
-					hx-target="closest .block"
-					hx-swap="outerHTML"
-				>
-					Edit
-				</button>
-			</div>
-		</div>
+		</section>
 	</div>
+	<div id="htmx-script-dump" hidden></div>
 }
 
-templ IngredientRowEdit(ingredient db.IngredientWithPrices, units services.UnitsMap, products map[int64]string) {
-	<div
-		class="block"
-		x-data={ fmt.Sprintf(`{ type: '%s' }`, 
-    func() string {
-        if len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil {
-            return "product"
-        }
-        return "price"
-    }(),
-) }
-	>
-		<div class="columns  is-align-items-flex-end">
-			<div class="column">
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Name</label>
-					<div class="control">
-						<input
-							class="input"
-							type="text"
-							value={ ingredient.Ingredient.Name }
-							form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-							name="name"
-						/>
-					</div>
+templ NewIngredient(usage viewmodels.IngredientWithPrice) {
+	@templ.JSONScript("new-ingredient", usage)
+	<script>
+		window.dispatchEvent(new CustomEvent("ingredient-added", {
+			detail: {
+				newIngredient: JSON.parse(document.getElementById('new-ingredient').textContent),
+			},
+		}))
+		const htmxScriptDump = document.getElementById('htmx-script-dump');
+		htmxScriptDump.innerHTML = "";
+	</script>
+}
+
+templ IngredientRow() {
+	<div class="columns  is-align-items-flex-end">
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Name</label>
+				<div class="control">
+					<input
+						class="input"
+						type="text"
+						:value="`${ ingredient.name }`"
+						disabled
+					/>
 				</div>
 			</div>
-			<div
-				class="column"
-			>
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Type</label>
-					<div class="control is-expanded">
-						<div class="select is-fullwidth">
-							<select
-								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-								name="type"
-								id={ fmt.Sprintf("type-%d", ingredient.Ingredient.ID) }
-								x-model="type"
-							>
+		</div>
+		<div
+			class="column"
+		>
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Type</label>
+				<div class="control is-expanded">
+					<div class="select is-fullwidth">
+						<select
+							:form="`ingredient-form-${ ingredient.id }`"
+							name="type"
+							:id="`type-${ ingredient.id }`"
+							disabled
+						>
+							<template x-if="ingredient.isBase">
 								<option value="price">Base Ingredient</option>
+							</template>
+							<template x-if="!ingredient.isBase">
 								<option value="product">Product</option>
-							</select>
-						</div>
+							</template>
+						</select>
 					</div>
 				</div>
 			</div>
-			<div
-				class="column"
-				x-show="type === 'price'"
-			>
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Price / Base Product</label>
-					<div class="field has-addons">
+		</div>
+		<div
+			class="column"
+			:id="`ingredient-${ingredient.id}-price`"
+		>
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Price / Base Product</label>
+				<template x-if="ingredient.isBase">
+					<div class="field has-addons mb-0">
 						<p class="control is-expanded">
 							<input
 								class="input"
-								type="text"
-								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-								name="price"
-								if len(ingredient.Prices) > 0 && ingredient.Prices[0].Price != nil {
-									value={ fmt.Sprintf("%.2f", (*ingredient.Prices[0].Price/units[ingredient.Prices[0].UnitID].Factor)*ingredient.Prices[0].Quantity) }
-								} else {
-									value=""
-								}
+								disabled
+								:value="ingredient.displayPrice"
 							/>
 						</p>
 						<p class="control">
 							<a class="button is-static">€</a>
 						</p>
 					</div>
-				</div>
-			</div>
-			<div
-				class="column"
-				x-show="type === 'product'"
-			>
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Price / Base Product</label>
-					<p class="control is-expanded">
+				</template>
+				<template x-if="!ingredient.isBase">
+					<div class="control is-expanded mb-0">
 						<div class="select is-fullwidth">
 							<select
-								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-								name="base-product-id"
+								disabled
 							>
-								for i, product := range products {
-									<option
-										value={ fmt.Sprintf("%d", i) }
-										selected?={ len(ingredient.Prices) > 0 && ingredient.Prices[0].BaseProductID != nil && i == *ingredient.Prices[0].BaseProductID }
-									>
-										{ product }
-									</option>
-								}
+								<option x-text="product_names[ingredient.price.base_product_id]"></option>
 							</select>
 						</div>
+					</div>
+				</template>
+			</div>
+		</div>
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Amount</label>
+				<div class="field has-addons">
+					<p class="control is-expanded">
+						<input
+							class="input"
+							type="text"
+							disabled
+							:value="( ingredient.price.quantity ).toFixed(2)"
+						/>
+					</p>
+					<p class="control">
+						<a class="button is-static" x-text="ingredient.unit.name"></a>
 					</p>
 				</div>
 			</div>
-			<div class="column">
-				<div class="field">
-					<label class="label is-hidden-tablet product-label">Per</label>
-					<div class="field has-addons">
-						<p class="control is-expanded">
-							<input
-								class="input is-fullwidth"
-								type="text"
-								form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-								if len(ingredient.Prices) > 0 {
-									value={ fmt.Sprintf("%.2f", ingredient.Prices[0].Quantity) }
-								} else {
-									value=""
-								}
-								name="quantity"
-								id={ fmt.Sprintf("amount-%d", ingredient.Ingredient.ID) }
-								data-ingredient-id={ fmt.Sprintf("%d", ingredient.Ingredient.ID) }
-							/>
-						</p>
-						<p class="control">
-							<span class="select">
-								<select
-									form={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-									name="unit"
-									id={ fmt.Sprintf("unit-%d", ingredient.Ingredient.ID) }
-									data-ingredient-id={ fmt.Sprintf("%d", ingredient.Ingredient.ID) }
-								>
-									for _, unit := range(units) {
-										<option
-											selected?={ len(ingredient.Prices) > 0 && ingredient.Prices[0].UnitID == unit.ID }
-											value={ fmt.Sprintf("%d", unit.ID) }
-										>{ unit.Name }</option>
-									}
-								</select>
-							</span>
-						</p>
+		</div>
+		<div class="column responsive-buttons">
+			<button
+				class="button"
+				@click="startEditing(ingredient)"
+			>
+				Edit
+			</button>
+		</div>
+	</div>
+}
+
+templ IngredientRowEdit() {
+	<div class="columns  is-align-items-flex-end">
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Name</label>
+				<div class="control">
+					<input
+						class="input"
+						type="text"
+						:value="`${ ingredient.Name }`"
+						:form="`ingredient-form-${ ingredient.id }`"
+						name="name"
+					/>
+				</div>
+			</div>
+		</div>
+		<div
+			class="column"
+		>
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Type</label>
+				<div class="control is-expanded">
+					<div class="select is-fullwidth">
+						<select
+							:form="`ingredient-form-${ ingredient.id }`"
+							name="type"
+							:id="`type-${ ingredient.id }`"
+							x-model="ingredient.type"
+						>
+							<option value="price">Base Ingredient</option>
+							<option value="product">Product</option>
+						</select>
 					</div>
 				</div>
 			</div>
-			<div class="column">
-				<form
-					id={ fmt.Sprintf("ingredient-form-%d", ingredient.Ingredient.ID) }
-					class="responsive-buttons"
-				>
-					<button
-						type="submit"
-						class="button is-link"
-						hx-put={ fmt.Sprintf("/ingredient-price/%d", ingredient.Ingredient.ID) }
-						hx-target="closest .block"
-						hx-swap="outerHTML"
-						title="Save"
-					>
-						<span class="is-hidden-tablet">Save</span>
-						<i class="fas fa-check fa-fw is-hidden-mobile"></i>
-					</button>
-					<button
-						class="button"
-						hx-get={ fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID) }
-						hx-target="closest .block"
-						hx-swap="outerHTML"
-						title="Cancel"
-					>
-						<span class="is-hidden-tablet">Cancel</span>
-						<i class="fas fa-times fa-fw is-hidden-mobile"></i>
-					</button>
-					<button
-						class="button is-danger"
-						hx-delete={ fmt.Sprintf("/ingredient/%d", ingredient.Ingredient.ID) }
-						hx-target="closest .block"
-						hx-swap="outerHTML"
-						title="Delete"
-					>
-						<span class="is-hidden-tablet">Delete</span>
-						<i class="fas fa-trash fa-fw is-hidden-mobile"></i>
-					</button>
-				</form>
+		</div>
+		<div
+			class="column"
+			x-show="ingredient.isBase"
+		>
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Price / Base Product</label>
+				<div class="field has-addons">
+					<p class="control is-expanded">
+						<input
+							class="input"
+							type="text"
+							:form="`ingredient-form-${ ingredient.id }`"
+							name="price"
+							x-model="ingredient.displayPrice"
+							@input="setIngredientPrice(ingredient)"
+						/>
+					</p>
+					<p class="control">
+						<a class="button is-static">€</a>
+					</p>
+				</div>
 			</div>
+		</div>
+		<div
+			class="column"
+			x-show="!ingredient.isBase"
+		>
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Price / Base Product</label>
+				<p class="control is-expanded">
+					<div class="select is-fullwidth">
+						<select
+							:form="`ingredient-form-${ ingredient.id }`"
+							name="base-product-id"
+						>
+							<template></template>
+						</select>
+					</div>
+				</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="field">
+				<label class="label is-hidden-tablet product-label">Amount</label>
+				<div class="field has-addons">
+					<p class="control is-expanded">
+						<input
+							class="input is-fullwidth"
+							type="text"
+							:form="`ingredient-form-${ ingredient.id }`"
+							:id="`amount-${ingredient.id}`"
+							name="quantity"
+							x-model="ingredient.displayQuantity"
+							@input="setIngredientQuantity(ingredient)"
+						/>
+					</p>
+					<p class="control">
+						<span class="select">
+							<select
+								:form="`ingredient-form-${ ingredient.id }`"
+								name="unit"
+								:id="`unit-${ingredient.id}`"
+							>
+								<template x-for="unit in getFilteredUnitsForUnitId(ingredient.price.unit_id)" :key="unit.id">
+									<option :value="unit.id" x-text="unit.name" :selected="unit.id === ingredient.price.unit_id"></option>
+								</template>
+							</select>
+						</span>
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<form
+				:id="`ingredient-form-${ ingredient.id }`"
+				class="responsive-buttons"
+				hx-swap="none"
+				:hx-post="`/ingredient-price/${ingredient.id}`"
+				x-init="htmx.process($el)"
+				@htmx:after-request="if ($event.detail.successful) {
+						ingredient.editing = false
+					} else {
+						cancelEditing(ingredient)
+					}"
+			>
+				<button
+					type="submit"
+					class="button is-link"
+					title="Save"
+				>
+					<span class="is-hidden-tablet">Save</span>
+					<i class="fas fa-check fa-fw is-hidden-mobile"></i>
+				</button>
+				<button
+					type="button"
+					class="button"
+					title="Cancel"
+					@click="cancelEditing(ingredient)"
+				>
+					<span class="is-hidden-tablet">Cancel</span>
+					<i class="fas fa-times fa-fw is-hidden-mobile"></i>
+				</button>
+				<button
+					type="button"
+					class="button is-danger"
+					:hx-delete="`/ingredient/${ingredient.id}`"
+					hx-swap="none"
+					@htmx:after-request="if ($event.detail.successful) removeItem(ingredient.id)"
+					x-init="htmx.process($el)"
+					title="Delete"
+				>
+					<span class="is-hidden-tablet">Delete</span>
+					<i class="fas fa-trash fa-fw is-hidden-mobile"></i>
+				</button>
+			</form>
 		</div>
 	</div>
 }

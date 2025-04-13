@@ -33,10 +33,10 @@ type baseProductPriceResolver interface {
 
 var ErrNoRowsAffected = errors.New("no rows affected")
 
-func NewPriceCalcService(log *slog.Logger, dbName string) (*PriceCalcService, error) {
+func NewPriceCalcService(log *slog.Logger) (*PriceCalcService, error) {
 	ctx := context.Background()
 
-	sql, err := sql.Open("sqlite3", "db.sqlite3?_foreign_keys=on")
+	sql, err := sql.Open("sqlite3", "db/db.sqlite3?_foreign_keys=on")
 	if err != nil {
 		return nil, err
 	}

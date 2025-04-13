@@ -42,7 +42,7 @@ func main() {
 		},
 	}))
 
-	service, err := services.NewPriceCalcService(logger, "test123.db")
+	service, err := services.NewPriceCalcService(logger)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(-1)

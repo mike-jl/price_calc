@@ -17,7 +17,7 @@ ARG TARGETARCH
 RUN apt-get update && apt-get install -y wget xz-utils && \
     wget https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz && \
     tar -xf zig-linux-x86_64-0.14.0.tar.xz && \
-    mv zig-linux-x86_64-0.14.0.tar.xz /zig
+    mv zig-linux-x86_64-0.14.0 /zig
 
 ENV PATH="/zig:${PATH}"
 

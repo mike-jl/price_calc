@@ -8,6 +8,10 @@ export default defineConfig({
         outDir: './assets/vite', //  Where the output .js file goes
         emptyOutDir: true,    // Don't wipe your assets dir if you're mixing files
         manifest: true, //  Create a manifest.json file
-    }
+    },
+    test: {
+        globals: true,
+        environment: 'jsdom', // Required if your TS code touches DOM (like Alpine components)
+    },
 });
 

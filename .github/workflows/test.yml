@@ -1,4 +1,4 @@
-name: Run Go Tests
+name: Run Tests
 
 on:
   push:
@@ -17,6 +17,28 @@ jobs:
       - name: Generate Code
         uses: ./.github/actions/codegen
 
-      - name: Run tests
+      - name: Run go tests
         run: go test ./...
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript tests
+        run: npm test
+
+      - name: Run Linter
+        run: npm run lint
 

@@ -25,7 +25,8 @@
         ]
     },
     "include": [
-        "scripts/**/*"
+        "scripts",
+        "tests"
     ],
     "exclude": [
         "node_modules",

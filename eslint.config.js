@@ -1,30 +1,34 @@
 import js from '@eslint/js';
-import ts from '@typescript-eslint/eslint-plugin';
-import parser from '@typescript-eslint/parser';
+import * as tseslint from 'typescript-eslint';
+import globals from 'globals';
+import vitestGlobals from "eslint-config-vitest-globals/flat"
 
 /** @type {import("eslint").Linter.FlatConfig[]} */
 export default [
     js.configs.recommended,
+    vitestGlobals(),
 
     {
-        files: ['**/*.ts'],
+        files: ['scripts/**/*.ts'],
         languageOptions: {
-            parser,
+            parser: tseslint.parser,
             parserOptions: {
                 project: './tsconfig.json',
-                ecmaVersion: 'latest',
-                sourceType: 'module',
+                tsconfigRootDir: import.meta.dirname,
+            },
+            globals: {
+                ...globals.browser,
+                ...globals.es2021,
             },
         },
         plugins: {
-            '@typescript-eslint': ts,
+            '@typescript-eslint': tseslint.plugin,
         },
         rules: {
-            // Core rules
-            'no-unused-vars': 'off', // handled by TS
-            'no-undef': 'off',
-
-            // TypeScript specific
+            semi: ['error', 'always'],
+            quotes: ['error', 'single'],
+            "no-unused-vars": "off",
+            "@typescript-eslint/no-unused-vars": ["error"],
             '@typescript-eslint/consistent-indexed-object-style': ['error', 'record'],
             '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
             '@typescript-eslint/no-explicit-any': 'warn',

@@ -1,4 +1,4 @@
-import { Unit, EditableWithId, Ingredient, IngredientPrice } from "./common";
+import { Unit, EditableWithId, Ingredient, IngredientPrice } from './common';
 
 export interface IngredientWithPrice extends Ingredient {
     price: IngredientPrice;

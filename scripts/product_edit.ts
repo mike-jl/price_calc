@@ -1,13 +1,13 @@
-import Alpine from "alpinejs";
+import Alpine from 'alpinejs';
 import {
     ProductEditViewModel,
     ProductEditData,
     IngredientUsageExtended,
     IngredientUsage,
-} from "./types/product_edit"
+} from './types/product_edit';
 
-import { Unit } from "./types/common";
-import { createEditingHelpers } from "./utils";
+import { Unit } from './types/common';
+import { createEditingHelpers } from './utils';
 
 export function getProductEditData(): ProductEditData {
     const vmText = document.getElementById('viewModel')!.textContent!;
@@ -48,7 +48,7 @@ export function getProductEditData(): ProductEditData {
         },
 
         listenForIngredientEvents(): void {
-            window.addEventListener("ingredient-added", (e) => {
+            window.addEventListener('ingredient-added', (e) => {
                 const { detail } = e as CustomEvent<{ ingredientUsage: IngredientUsage }>;
                 const newUsage = detail.ingredientUsage;
                 this.ingredient_usages_ext.push(
@@ -76,7 +76,7 @@ export function getProductEditData(): ProductEditData {
             const ingredient = this.ingredients[this.newIngredientId];
             const unit = this.units[this.newIngredientUnitId];
             if (!ingredient || !unit || Number.isNaN(this.newIngredientAmount) || ingredient.prices.length === 0) {
-                return "0.00";
+                return '0.00';
             }
             return (ingredient.prices[0].price * this.newIngredientAmount / unit.factor).toFixed(2);
         },

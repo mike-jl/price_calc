@@ -1,6 +1,6 @@
-import { IngredientsData, IngredientsViewModel, IngredientExtended, IngredientWithPrice } from "./types/ingredients";
-import { Unit } from "./types/common";
-import { createEditingHelpers } from "./utils";
+import { IngredientsData, IngredientsViewModel, IngredientExtended, IngredientWithPrice } from './types/ingredients';
+import { Unit } from './types/common';
+import { createEditingHelpers } from './utils';
 
 export function getIngredientsData(): IngredientsData {
     const vmText = document.getElementById('viewModel')!.textContent!;
@@ -9,7 +9,7 @@ export function getIngredientsData(): IngredientsData {
 
     return {
         ...parsedVm,
-        newIngredientType: "price",
+        newIngredientType: 'price',
         ingredients_ext: [],
         ingredientBackup: {},
         startEditing: () => { },
@@ -31,7 +31,7 @@ export function getIngredientsData(): IngredientsData {
         },
 
         listenForIngredientEvents(): void {
-            window.addEventListener("ingredient-added", (e) => {
+            window.addEventListener('ingredient-added', (e) => {
                 const { detail } = e as CustomEvent<{ newIngredient: IngredientWithPrice }>;
                 const newIngredient = detail.newIngredient;
                 console.log(newIngredient);
@@ -68,7 +68,7 @@ export function getIngredientsData(): IngredientsData {
 
         setIngredientQuantity(ingredient: IngredientExtended): void {
             const parsed = parseFloat(ingredient.displayQuantity);
-            if (!Number.isNaN(parsed)) ingredient.price.quantity = parsed
+            if (!Number.isNaN(parsed)) ingredient.price.quantity = parsed;
         },
 
         modifyIngredient(ingredient: IngredientWithPrice): IngredientExtended {

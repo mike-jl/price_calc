@@ -27,15 +27,6 @@ jobs:
       - name: Generate Code
         uses: ./.github/actions/codegen
 
-      - name: Install cross compiler
-        run: |
-          sudo apt-get update
-          if [[ "${{ matrix.arch }}" == "arm64" ]]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-          else
-            sudo apt-get install -y gcc
-          fi
-
       - name: Build Go binary
         run: |
           mkdir -p dist/${{ matrix.arch }}

@@ -21,6 +21,35 @@ export function getProductEditData(): ProductEditData {
         newIngredientUnitId: 0,
         usageBackup: {},
 
+        init(): void {
+            this.watchNewIngredientId();
+            this.transformInitialUsages();
+            this.listenForIngredientEvents();
+        },
+
+        watchNewIngredientId(): void {
+            const $this = this as Alpine.Magics<any> & ProductEditData;
+            $this.$watch('newIngredientId', (newId: number) => {
+                this.newIngredientUnitId = this.getSafeUnitIdFromIngredient(newId) ?? 0;
+            });
+        },
+
+        transformInitialUsages(): void {
+            this.ingredient_usages_ext = (this.ingredient_usages ?? []).map((usage: IngredientUsage) =>
+                this.modifyIngredientUsage(usage)
+            );
+        },
+
+        listenForIngredientEvents(): void {
+            window.addEventListener("ingredient-added", (e) => {
+                const { detail } = e as CustomEvent<{ ingredientUsage: IngredientUsage }>;
+                const newUsage = detail.ingredientUsage;
+                this.ingredient_usages_ext.push(
+                    this.modifyIngredientUsage(newUsage)
+                );
+            });
+        },
+
         getFilteredUnitsForUnitId(unitId: number): Unit[] {
             const unit = this.units[unitId];
             if (!unit) return [];
@@ -68,24 +97,6 @@ export function getProductEditData(): ProductEditData {
         },
         removeUsage(usageId: number): void {
             this.ingredient_usages_ext = this.ingredient_usages_ext.filter((u) => u.id !== usageId);
-        },
-        init(): void {
-            const $this = this as Alpine.Magics<any> & ProductEditData;
-            $this.$watch('newIngredientId', (newId: number) => {
-                this.newIngredientUnitId = this.getSafeUnitIdFromIngredient(newId) ?? 0;
-            });
-
-            this.ingredient_usages_ext = (this.ingredient_usages ?? []).map((usage: IngredientUsage) =>
-                this.modifyIngredientUsage(usage)
-            );
-
-            window.addEventListener("ingredient-added", (e) => {
-                const { detail } = e as CustomEvent<{ ingredientUsage: IngredientUsage }>;
-                const newUsage = detail.ingredientUsage;
-                this.ingredient_usages_ext.push(
-                    this.modifyIngredientUsage(newUsage)
-                );
-            });
         },
         modifyIngredientUsage(
             usage: IngredientUsage,

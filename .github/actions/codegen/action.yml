@@ -16,11 +16,8 @@ runs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.26.0
+    - run: go tool sqlc generate
       shell: bash
 
-    - run: go install github.com/a-h/templ/cmd/templ@v0.1.16
-      shell: bash
-
-    - run: sqlc generate && templ generate
+    - run: go tool templ generate
       shell: bash

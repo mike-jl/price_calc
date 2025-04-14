@@ -3,9 +3,11 @@ FROM node:20 AS frontend
 
 WORKDIR /app
 
-COPY package*.json vite.config.ts tsconfig.json ./
+COPY package*.json ./
+RUN npm ci
+
+COPY vite.config.ts tsconfig.json ./
 COPY scripts ./scripts
-RUN npm install
 RUN npm run build
 
 # --- Stage 2: Final runtime image ---

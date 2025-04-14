@@ -21,9 +21,6 @@ jobs:
       CGO_ENABLED: 0
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
       - name: Generate Code
         uses: ./.github/actions/codegen
 

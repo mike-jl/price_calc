@@ -11,6 +11,7 @@ runs:
       run: |
         rm -rf ~/.cache/go-build
         rm -rf ~/go/pkg/mod
+      shell: bash
 
     - uses: actions/cache@v3
       with:

@@ -57,6 +57,6 @@ export type ProductEditData = ProductEditViewModel & {
     cancelEditing: (usage: IngredientUsageExtended) => void;
     removeUsage: (usageId: number) => void;
     init: () => void;
-    modifyIngredientUsage: (usage: IngredientUsage, units: Unit[], ingredients: IngredientWithPrices[]) => IngredientUsageExtended;
+    modifyIngredientUsage: (usage: IngredientUsage) => IngredientUsageExtended;
 };
 

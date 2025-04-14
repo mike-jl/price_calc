@@ -76,24 +76,22 @@ export function getProductEditData(): ProductEditData {
             });
 
             this.ingredient_usages_ext = (this.ingredient_usages ?? []).map((usage: IngredientUsage) =>
-                this.modifyIngredientUsage(usage, this.units, this.ingredients)
+                this.modifyIngredientUsage(usage)
             );
 
             window.addEventListener("ingredient-added", (e) => {
                 const { detail } = e as CustomEvent<{ ingredientUsage: IngredientUsage }>;
                 const newUsage = detail.ingredientUsage;
                 this.ingredient_usages_ext.push(
-                    this.modifyIngredientUsage(newUsage, this.units, this.ingredients)
+                    this.modifyIngredientUsage(newUsage)
                 );
             });
         },
         modifyIngredientUsage(
             usage: IngredientUsage,
-            units: Unit[],
-            ingredients: IngredientWithPrices[]
         ): IngredientUsageExtended {
-            const unit = units.find(u => u.id === usage.unit_id);
-            const ingredient = ingredients.find(i => i.ingredient.id === usage.ingredient_id);
+            const unit = this.units.find(u => u.id === usage.unit_id);
+            const ingredient = this.ingredients.find(i => i.ingredient.id === usage.ingredient_id);
             if (!unit || !ingredient) {
                 throw new Error(`Unit or ingredient not found for usage ID: ${usage.id}`);
             }

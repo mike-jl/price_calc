@@ -53,7 +53,7 @@ export function getIngredientsData(): IngredientsData {
             const unit = this.units[ingredientPrice.unit_id];
             if (!unit) return;
             const parsed = parseFloat(ingredient.displayPrice);
-            if (!isNaN(parsed)) {
+            if (!Number.isNaN(parsed)) {
                 ingredientPrice.price = (parsed / ingredientPrice.quantity) * unit.factor;
                 console.log(ingredientPrice.price);
             }
@@ -61,7 +61,7 @@ export function getIngredientsData(): IngredientsData {
 
         setIngredientQuantity(ingredient: IngredientExtended): void {
             const parsed = parseFloat(ingredient.displayQuantity);
-            if (!isNaN(parsed)) ingredient.price.quantity = parsed
+            if (!Number.isNaN(parsed)) ingredient.price.quantity = parsed
         },
 
         modifyIngredient(ingredient: IngredientWithPrice): IngredientExtended {

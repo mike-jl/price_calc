@@ -39,7 +39,7 @@ export function getProductEditData(): ProductEditData {
         get newIngredientCost(): string {
             const ingredient = this.ingredients.find(i => i.ingredient.id === this.newIngredientId);
             const unit = this.units[this.newIngredientUnitId];
-            if (!ingredient || !unit || isNaN(this.newIngredientAmount) || ingredient.prices.length === 0) {
+            if (!ingredient || !unit || Number.isNaN(this.newIngredientAmount) || ingredient.prices.length === 0) {
                 return "0.00";
             }
             return (ingredient.prices[0].price * this.newIngredientAmount / unit.factor).toFixed(2);

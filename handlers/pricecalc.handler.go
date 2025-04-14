@@ -48,7 +48,7 @@ func (ph *PriceCalcHandler) getIngredients(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get products "+err.Error())
 	}
 
-	units, err := ph.service.GetUnits(c.Request().Context())
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
 	if err != nil {
 		ph.log.Error(err.Error())
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
@@ -524,7 +524,7 @@ func (ph *PriceCalcHandler) getProductEditPage(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "could not get ingredients "+err.Error())
 	}
 
-	units, err := ph.service.GetUnits(c.Request().Context())
+	units, err := ph.service.GetUnitsMap(c.Request().Context())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get units "+err.Error())
 	}

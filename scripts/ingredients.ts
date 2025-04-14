@@ -36,12 +36,12 @@ export function getIngredientsData(): IngredientsData {
         },
 
         getFilteredUnitsForUnitId(unitId: number): Unit[] {
-            const unit = this.units.find(u => u.id === unitId);
+            const unit = this.units[unitId];
             if (!unit) return [];
             const baseUnitId = unit.base_unit_id ?? unit.id;
             console.log(baseUnitId);
             console.log(unitId);
-            const units = this.units.filter(
+            const units = Object.values(this.units).filter(
                 u => u.id === baseUnitId || u.base_unit_id === baseUnitId
             );
             console.log(units);
@@ -50,7 +50,8 @@ export function getIngredientsData(): IngredientsData {
 
         setIngredientPrice(ingredient: IngredientExtended): void {
             const ingredientPrice = ingredient.price;
-            const unit = this.units.find(u => u.id === ingredientPrice.unit_id)!;
+            const unit = this.units[ingredientPrice.unit_id];
+            if (!unit) return;
             const parsed = parseFloat(ingredient.displayPrice);
             if (!isNaN(parsed)) {
                 ingredientPrice.price = (parsed / ingredientPrice.quantity) * unit.factor;
@@ -66,7 +67,8 @@ export function getIngredientsData(): IngredientsData {
         modifyIngredient(ingredient: IngredientWithPrice): IngredientExtended {
             const isBase = ingredient.price.base_product_id === null;
             const ingredientPrice = ingredient.price;
-            const unit = this.units.find(u => u.id === ingredientPrice.unit_id)!;
+            const unit = this.units[ingredientPrice.unit_id];
+            if (!unit) return ingredient as IngredientExtended;
             const displayPrice = ((ingredientPrice.price / unit.factor) * ingredientPrice.quantity).toFixed(2);
             return {
                 ...ingredient,

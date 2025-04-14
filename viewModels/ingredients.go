@@ -15,6 +15,6 @@ type IngredientWithPrice struct {
 
 type IngredientsViewModel struct {
 	Ingredients  []IngredientWithPrice `json:"ingredients"`
-	Units        []db.Unit             `json:"units"`
+	Units        map[int64]db.Unit     `json:"units"`
 	ProductNames map[int64]string      `json:"product_names"`
 }

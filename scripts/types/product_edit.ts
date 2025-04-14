@@ -39,7 +39,7 @@ export interface ProductEditViewModel {
     categories: Category[];
     ingredient_usages: IngredientUsage[];
     ingredients: IngredientWithPrices[];
-    units: Unit[];
+    units: Record<number, Unit>
 }
 
 export type ProductEditData = ProductEditViewModel & {

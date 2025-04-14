@@ -5,9 +5,9 @@ export interface IngredientWithPrice extends Ingredient {
 }
 
 export interface IngredientsViewModel {
-    product_names: { [productId: string]: string };
+    product_names: Record<number, string>;
     ingredients: IngredientWithPrice[];
-    units: Unit[];
+    units: Record<number, Unit>
 }
 
 export interface IngredientExtended extends IngredientWithPrice, EditableWithId {

@@ -22,10 +22,10 @@ export function getProductEditData(): ProductEditData {
         usageBackup: {},
 
         getFilteredUnitsForUnitId(unitId: number): Unit[] {
-            const unit = this.units.find(u => u.id === unitId);
+            const unit = this.units[unitId];
             if (!unit) return [];
             const baseUnitId = unit.base_unit_id ?? unit.id;
-            return this.units.filter(
+            return Object.values(this.units).filter(
                 u => u.id === baseUnitId || u.base_unit_id === baseUnitId
             );
         },
@@ -38,7 +38,7 @@ export function getProductEditData(): ProductEditData {
 
         get newIngredientCost(): string {
             const ingredient = this.ingredients.find(i => i.ingredient.id === this.newIngredientId);
-            const unit = this.units.find(u => u.id === this.newIngredientUnitId);
+            const unit = this.units[this.newIngredientUnitId];
             if (!ingredient || !unit || isNaN(this.newIngredientAmount) || ingredient.prices.length === 0) {
                 return "0.00";
             }
@@ -90,7 +90,7 @@ export function getProductEditData(): ProductEditData {
         modifyIngredientUsage(
             usage: IngredientUsage,
         ): IngredientUsageExtended {
-            const unit = this.units.find(u => u.id === usage.unit_id);
+            const unit = this.units[usage.unit_id];
             const ingredient = this.ingredients.find(i => i.ingredient.id === usage.ingredient_id);
             if (!unit || !ingredient) {
                 throw new Error(`Unit or ingredient not found for usage ID: ${usage.id}`);

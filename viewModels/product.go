@@ -12,5 +12,5 @@ type ProductEditViewModel struct {
 	Categories       []db.Category          `json:"categories"`
 	IngredientUsages []db.IngredientUsage   `json:"ingredient_usages"`
 	Ingredients      []IngredientWithPrices `json:"ingredients"`
-	Units            []db.Unit              `json:"units"`
+	Units            map[int64]db.Unit      `json:"units"`
 }

@@ -6,10 +6,21 @@ runs:
     - uses: actions/setup-go@v5
       with:
         go-version: 1.24
-    - run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-      shell: bash
-    - run: go install github.com/a-h/templ/cmd/templ@latest
-      shell: bash
-    - run: sqlc generate && templ generate
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.26.0
       shell: bash
 
+    - run: go install github.com/a-h/templ/cmd/templ@v0.1.16
+      shell: bash
+
+    - run: sqlc generate && templ generate
+      shell: bash

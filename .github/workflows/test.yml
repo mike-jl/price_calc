@@ -11,21 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24
-
-      - name: Generate SQLC + Templ files
-        run: |
-          go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-          go install github.com/a-h/templ/cmd/templ@latest
-          sqlc generate
-          templ generate
-
+      - name: Generate Code
+        uses: ./.github/actions/codegen
       - name: Run tests
         run: go test ./...
 

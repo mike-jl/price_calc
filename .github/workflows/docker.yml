@@ -21,13 +21,8 @@ jobs:
       CGO_ENABLED: 0
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24
+      - name: Generate Code
+        uses: ./.github/actions/codegen
 
       - name: Install cross compiler
         run: |
@@ -37,13 +32,6 @@ jobs:
           else
             sudo apt-get install -y gcc
           fi
-
-      - name: Generate SQLC + Templ files
-        run: |
-          go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-          go install github.com/a-h/templ/cmd/templ@latest
-          sqlc generate
-          templ generate
 
       - name: Build Go binary
         run: |

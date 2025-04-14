@@ -9,8 +9,8 @@ runs:
 
     - name: Clean Go mod + build cache before restore
       run: |
-        rm -rf ~/.cache/go-build
-        rm -rf ~/go/pkg/mod
+        sudo rm -rf ~/go/pkg/mod || true
+        sudo rm -rf ~/.cache/go-build || true
       shell: bash
 
     - uses: actions/cache@v3

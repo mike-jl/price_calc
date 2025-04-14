@@ -11,8 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
       - name: Generate Code
         uses: ./.github/actions/codegen
+
       - name: Run tests
         run: go test ./...
 

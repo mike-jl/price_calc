@@ -35,7 +35,7 @@ export function getProductEditData(): ProductEditData {
         },
 
         watchNewIngredientId(): void {
-            const $this = this as Alpine.Magics<any> & ProductEditData;
+            const $this = this as Alpine.Magics<ProductEditData> & ProductEditData;
             $this.$watch('newIngredientId', (newId: number) => {
                 this.newIngredientUnitId = this.getSafeUnitIdFromIngredient(newId) ?? 0;
             });

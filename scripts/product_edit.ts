@@ -6,7 +6,8 @@ import {
     IngredientUsage,
 } from "./types/product_edit"
 
-import { Unit, IngredientWithPrices } from "./types/common";
+import { Unit } from "./types/common";
+import { createEditingHelpers } from "./utils";
 
 export function getProductEditData(): ProductEditData {
     const vmText = document.getElementById('viewModel')!.textContent!;
@@ -20,11 +21,17 @@ export function getProductEditData(): ProductEditData {
         newIngredientAmount: 0,
         newIngredientUnitId: 0,
         usageBackup: {},
+        startEditing: () => { },
+        cancelEditing: () => { },
+        removeItem: () => { },
 
         init(): void {
             this.watchNewIngredientId();
             this.transformInitialUsages();
             this.listenForIngredientEvents();
+
+            const helpers = createEditingHelpers(this.ingredient_usages_ext, this.usageBackup);
+            Object.assign(this, helpers);
         },
 
         watchNewIngredientId(): void {
@@ -60,13 +67,13 @@ export function getProductEditData(): ProductEditData {
         },
 
         getSafeUnitIdFromIngredient(ingredientId: number): number | null {
-            const ingredient = this.ingredients.find(i => i.ingredient.id === ingredientId);
+            const ingredient = this.ingredients[ingredientId];
             if (!ingredient || ingredient.prices.length === 0) return null;
             return ingredient.prices[0].unit_id;
         },
 
         get newIngredientCost(): string {
-            const ingredient = this.ingredients.find(i => i.ingredient.id === this.newIngredientId);
+            const ingredient = this.ingredients[this.newIngredientId];
             const unit = this.units[this.newIngredientUnitId];
             if (!ingredient || !unit || Number.isNaN(this.newIngredientAmount) || ingredient.prices.length === 0) {
                 return "0.00";
@@ -76,33 +83,17 @@ export function getProductEditData(): ProductEditData {
 
         get productCost(): string {
             return this.ingredient_usages_ext.reduce((cost, usage) => {
-                const ingredient = this.ingredients.find(i => i.ingredient.id === usage.ingredient_id);
+                const ingredient = this.ingredients[usage.ingredient_id];
                 if (!ingredient?.prices || ingredient.prices.length === 0) return cost;
                 return cost + ingredient.prices[0].price * usage.quantity;
             }, 0).toFixed(2);
         },
 
-        startEditing(usage: IngredientUsageExtended): void {
-            this.usageBackup[usage.id] = JSON.parse(JSON.stringify(usage));
-            usage.editing = true;
-        },
-
-        cancelEditing(usage: IngredientUsageExtended): void {
-            const backup = this.usageBackup[usage.id];
-            if (backup) {
-                Object.assign(usage, backup);
-                delete this.usageBackup[usage.id];
-            }
-            usage.editing = false;
-        },
-        removeUsage(usageId: number): void {
-            this.ingredient_usages_ext = this.ingredient_usages_ext.filter((u) => u.id !== usageId);
-        },
         modifyIngredientUsage(
             usage: IngredientUsage,
         ): IngredientUsageExtended {
             const unit = this.units[usage.unit_id];
-            const ingredient = this.ingredients.find(i => i.ingredient.id === usage.ingredient_id);
+            const ingredient = this.ingredients[usage.ingredient_id];
             if (!unit || !ingredient) {
                 throw new Error(`Unit or ingredient not found for usage ID: ${usage.id}`);
             }
@@ -118,6 +109,4 @@ export function getProductEditData(): ProductEditData {
         }
     };
 }
-
-
 

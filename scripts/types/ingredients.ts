@@ -33,4 +33,6 @@ export interface IngredientsData extends IngredientsViewModel {
     cancelEditing: (usage: IngredientExtended) => void;
     removeItem: (itemId: number) => void;
     modifyIngredient(ingredient: IngredientWithPrice): IngredientExtended;
+    listenForIngredientEvents: () => void;
+    transformIngredients: () => void;
 }

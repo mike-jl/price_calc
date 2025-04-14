@@ -38,7 +38,7 @@ export interface ProductEditViewModel {
     product: ProductWithCost;
     categories: Category[];
     ingredient_usages: IngredientUsage[];
-    ingredients: IngredientWithPrices[];
+    ingredients: Record<number, IngredientWithPrices>;
     units: Record<number, Unit>
 }
 
@@ -55,7 +55,7 @@ export type ProductEditData = ProductEditViewModel & {
     readonly productCost: string;
     startEditing: (usage: IngredientUsageExtended) => void;
     cancelEditing: (usage: IngredientUsageExtended) => void;
-    removeUsage: (usageId: number) => void;
+    removeItem: (usageId: number) => void;
     init: () => void;
     modifyIngredientUsage: (usage: IngredientUsage) => IngredientUsageExtended;
     watchNewIngredientId: () => void;

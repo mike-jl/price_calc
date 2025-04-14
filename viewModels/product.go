@@ -8,9 +8,9 @@ type ProductWithCost struct {
 }
 
 type ProductEditViewModel struct {
-	Product          ProductWithCost        `json:"product"`
-	Categories       []db.Category          `json:"categories"`
-	IngredientUsages []db.IngredientUsage   `json:"ingredient_usages"`
-	Ingredients      []IngredientWithPrices `json:"ingredients"`
-	Units            map[int64]db.Unit      `json:"units"`
+	Product          ProductWithCost                `json:"product"`
+	Categories       []db.Category                  `json:"categories"`
+	IngredientUsages []db.IngredientUsage           `json:"ingredient_usages"`
+	Ingredients      map[int64]IngredientWithPrices `json:"ingredients"`
+	Units            map[int64]db.Unit              `json:"units"`
 }

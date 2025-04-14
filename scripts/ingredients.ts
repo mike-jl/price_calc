@@ -17,14 +17,20 @@ export function getIngredientsData(): IngredientsData {
         removeItem: () => { },
 
         init(): void {
+            this.transformIngredients();
+            this.listenForIngredientEvents();
+
+            const helpers = createEditingHelpers(this.ingredients_ext, this.ingredientBackup);
+            Object.assign(this, helpers);
+        },
+
+        transformIngredients(): void {
             this.ingredients_ext = (this.ingredients ?? []).map((ingredient) =>
                 this.modifyIngredient(ingredient)
             );
-            const helpers = createEditingHelpers(this.ingredients_ext, this.ingredientBackup);
-            this.startEditing = helpers.startEditing;
-            this.cancelEditing = helpers.cancelEditing;
-            this.removeItem = helpers.removeItem;
+        },
 
+        listenForIngredientEvents(): void {
             window.addEventListener("ingredient-added", (e) => {
                 const { detail } = e as CustomEvent<{ newIngredient: IngredientWithPrice }>;
                 const newIngredient = detail.newIngredient;
@@ -33,6 +39,7 @@ export function getIngredientsData(): IngredientsData {
                     this.modifyIngredient(newIngredient)
                 );
             });
+
         },
 
         getFilteredUnitsForUnitId(unitId: number): Unit[] {

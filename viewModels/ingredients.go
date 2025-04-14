@@ -2,6 +2,11 @@ package viewmodels
 
 import "github.com/mike-jl/price_calc/db"
 
+type IngredientWithPrices struct {
+	Ingredient db.Ingredient        `json:"ingredient"`
+	Prices     []db.IngredientPrice `json:"prices"`
+}
+
 type IngredientWithPrice struct {
 	ID    int64              `json:"id"`
 	Name  string             `json:"name"`

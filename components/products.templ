@@ -3,10 +3,11 @@ package components
 import (
 	"fmt"
 	"github.com/mike-jl/price_calc/db"
+	"github.com/mike-jl/price_calc/viewModels"
 	"strconv"
 )
 
-templ ProductsTable(products []db.ProductWithCost, categories []db.Category) {
+templ ProductsTable(products []viewmodels.ProductWithCost, categories []db.Category) {
 	<section class="section hero is-info custom block">
 		<div class="container">
 			<div class="hero-body p-0">
@@ -52,7 +53,7 @@ templ ProductsTable(products []db.ProductWithCost, categories []db.Category) {
 	</section>
 }
 
-templ ProductRow(product db.ProductWithCost, categories []db.Category) {
+templ ProductRow(product viewmodels.ProductWithCost, categories []db.Category) {
 	<div class="block">
 		<div class="columns is-align-items-flex-end">
 			<div class="column">
@@ -126,13 +127,13 @@ templ ProductRow(product db.ProductWithCost, categories []db.Category) {
 	</div>
 }
 
-func getIngredientFromId(id int64, ingredients []db.IngredientWithPrices) db.IngredientWithPrices {
+func getIngredientFromId(id int64, ingredients []viewmodels.IngredientWithPrices) viewmodels.IngredientWithPrices {
 	for _, ingredient := range ingredients {
 		if ingredient.Ingredient.ID == id {
 			return ingredient
 		}
 	}
-	return db.IngredientWithPrices{}
+	return viewmodels.IngredientWithPrices{}
 }
 
 func getCategoryFromId(id int64, categories []db.Category) db.Category {

@@ -490,7 +490,7 @@ func (ph *PriceCalcHandler) putProduct(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not insert product "+err.Error())
 	}
-	productWithCost := db.ProductWithCost{Product: *product, Cost: 0}
+	productWithCost := viewmodels.ProductWithCost{Product: *product, Cost: 0}
 	categories, err := ph.service.GetCategories()
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "could not get categories "+err.Error())

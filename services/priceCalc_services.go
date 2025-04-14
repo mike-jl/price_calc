@@ -15,6 +15,7 @@ import (
 
 	"github.com/mike-jl/price_calc/db"
 	"github.com/mike-jl/price_calc/internal/utils"
+	viewmodels "github.com/mike-jl/price_calc/viewModels"
 )
 
 type UnitsMap map[int64]db.Unit
@@ -28,7 +29,7 @@ type PriceCalcService struct {
 }
 
 type baseProductPriceResolver interface {
-	resolveBaseProductPrices([]db.IngredientWithPrices, context.Context) error
+	resolveBaseProductPrices([]viewmodels.IngredientWithPrices, context.Context) error
 }
 
 var ErrNoRowsAffected = errors.New("no rows affected")
@@ -138,19 +139,19 @@ func (pc *PriceCalcService) checkCircular(
 func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
 	ctx context.Context,
 	ingredients []db.GetIngredientsWithPriceUnitRow,
-) ([]db.IngredientWithPrices, error) {
-	out := []db.IngredientWithPrices{}
+) ([]viewmodels.IngredientWithPrices, error) {
+	out := []viewmodels.IngredientWithPrices{}
 	for _, ingredientRow := range ingredients {
 
-		var target *db.IngredientWithPrices
+		var target *viewmodels.IngredientWithPrices
 		// check if the ingredient is already in the out struct
-		ing, ok := utils.FirstPtr(out, func(ip db.IngredientWithPrices) bool {
+		ing, ok := utils.FirstPtr(out, func(ip viewmodels.IngredientWithPrices) bool {
 			return ingredientRow.ID == ip.Ingredient.ID
 		})
 		if ok {
 			target = ing
 		} else {
-			target = utils.AppendAndGetPtr(&out, db.IngredientWithPrices{
+			target = utils.AppendAndGetPtr(&out, viewmodels.IngredientWithPrices{
 				Ingredient: db.Ingredient{ID: ingredientRow.ID, Name: ingredientRow.Name},
 			})
 		}
@@ -184,7 +185,7 @@ func (pc *PriceCalcService) parseIngredientsWithPriceUnitRow(
 }
 
 func (pc *PriceCalcService) resolveBaseProductPrices(
-	ingredients []db.IngredientWithPrices,
+	ingredients []viewmodels.IngredientWithPrices,
 	ctx context.Context,
 ) error {
 	// check if the ingredient has a base product
@@ -289,14 +290,14 @@ func (pc *PriceCalcService) calculateProductCost(
 
 func (pc *PriceCalcService) GetIngredientsWithPrice(
 	ctx context.Context,
-) ([]db.IngredientWithPrices, error) {
+) ([]viewmodels.IngredientWithPrices, error) {
 	return pc.GetIngredientsWithPrices(ctx, 1)
 }
 
 func (pc *PriceCalcService) GetIngredientsWithPrices(
 	ctx context.Context,
 	priceLimit int64,
-) ([]db.IngredientWithPrices, error) {
+) ([]viewmodels.IngredientWithPrices, error) {
 	ingredients, err := pc.queries.GetIngredientsWithPriceUnit(
 		ctx,
 		db.GetIngredientsWithPriceUnitParams{
@@ -313,7 +314,7 @@ func (pc *PriceCalcService) GetIngredientsWithPrices(
 func (pc *PriceCalcService) GetIngredientWithPrice(
 	ctx context.Context,
 	ingredientId int64,
-) (*db.IngredientWithPrices, error) {
+) (*viewmodels.IngredientWithPrices, error) {
 	return pc.GetIngredientWithPrices(ctx, ingredientId, 1)
 }
 
@@ -321,7 +322,7 @@ func (pc *PriceCalcService) GetIngredientWithPrices(
 	ctx context.Context,
 	ingredientId,
 	priceLimit int64,
-) (*db.IngredientWithPrices, error) {
+) (*viewmodels.IngredientWithPrices, error) {
 	ingredient, err := pc.queries.GetIngredientsWithPriceUnit(
 		ctx,
 		db.GetIngredientsWithPriceUnitParams{
@@ -347,7 +348,7 @@ func (pc *PriceCalcService) GetIngredientWithPrices(
 func (pc *PriceCalcService) NewIngredient(
 	ctx context.Context,
 	params UpdateIngredientParams,
-) (*db.IngredientWithPrices, error) {
+) (*viewmodels.IngredientWithPrices, error) {
 	tx, err := pc.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -496,7 +497,7 @@ type UpdateIngredientParams struct {
 func (pc *PriceCalcService) UpdateIngredientWithPrice(
 	ctx context.Context,
 	params UpdateIngredientParams,
-) (*db.IngredientWithPrices, error) {
+) (*viewmodels.IngredientWithPrices, error) {
 	tx, err := pc.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -606,14 +607,14 @@ func (pc *PriceCalcService) DeleteIngredient(ingredientId int64) error {
 	return nil
 }
 
-func (pc *PriceCalcService) GetProductsWithCost() ([]db.ProductWithCost, error) {
+func (pc *PriceCalcService) GetProductsWithCost() ([]viewmodels.ProductWithCost, error) {
 	ctx := context.Background()
 	products, err := pc.queries.GetProductsWithCost(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	out := []db.ProductWithCost{}
+	out := []viewmodels.ProductWithCost{}
 	for _, product := range products {
 		if product.Cost == nil {
 			// again, not supposed to happen, but if it does, calculate the cost and create the row
@@ -624,7 +625,7 @@ func (pc *PriceCalcService) GetProductsWithCost() ([]db.ProductWithCost, error) 
 			product.Cost = &newCost
 		}
 		// fmt.Printf("*baseProductID = %f\n", *product.Cost)
-		out = append(out, db.ProductWithCost{
+		out = append(out, viewmodels.ProductWithCost{
 			Product: db.Product{
 				ID:            product.ID,
 				Name:          product.Name,
@@ -650,13 +651,15 @@ func (pc *PriceCalcService) GetProductNames(ctx context.Context) (map[int64]stri
 	return out, nil
 }
 
-func (pc *PriceCalcService) GetProductWithCost(productId int64) (*db.ProductWithCost, error) {
+func (pc *PriceCalcService) GetProductWithCost(
+	productId int64,
+) (*viewmodels.ProductWithCost, error) {
 	ctx := context.Background()
 	product, err := pc.queries.GetProductWithCost(ctx, productId)
 	if err != nil {
 		return nil, err
 	}
-	productWithCost := db.ProductWithCost{
+	productWithCost := viewmodels.ProductWithCost{
 		Product: db.Product{
 			ID:            product.ID,
 			Name:          product.Name,

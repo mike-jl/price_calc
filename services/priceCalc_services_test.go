@@ -8,13 +8,14 @@ import (
 
 	"github.com/mike-jl/price_calc/db"
 	"github.com/mike-jl/price_calc/internal/utils"
+	viewmodels "github.com/mike-jl/price_calc/viewModels"
 	"github.com/stretchr/testify/assert"
 )
 
 type mockBaseProductPriceResolver struct{}
 
 func (m *mockBaseProductPriceResolver) resolveBaseProductPrices(
-	rows []db.IngredientWithPrices,
+	rows []viewmodels.IngredientWithPrices,
 	ctx context.Context,
 ) error {
 	return nil

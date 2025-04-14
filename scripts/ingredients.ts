@@ -4,7 +4,7 @@ import { createEditingHelpers } from './utils';
 
 export function getIngredientsData(): IngredientsData {
     const vmText = document.getElementById('viewModel')!.textContent!;
-    const parsedVm: IngredientsViewModel = JSON.parse(vmText);
+    const parsedVm: IngredientsViewModel = JSON.parse(vmText) as IngredientsViewModel;
     console.log(parsedVm);
 
     return {

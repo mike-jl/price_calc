@@ -11,12 +11,15 @@ import { createEditingHelpers } from './utils';
 
 export function getProductEditData(): ProductEditData {
     const vmText = document.getElementById('viewModel')!.textContent!;
-    const parsedVm: ProductEditViewModel = JSON.parse(vmText);
+    const parsedVm: ProductEditViewModel = JSON.parse(vmText) as ProductEditViewModel;
+    return createProductEditModel(parsedVm);
+}
 
+export function createProductEditModel(vm: ProductEditViewModel): ProductEditData {
     return {
-        ...parsedVm,
+        ...vm,
         ingredient_usages_ext: [],
-        selectedCat: parsedVm.categories.map(c => c.id).indexOf(parsedVm.product.product.category_id),
+        selectedCat: vm.categories[vm.product.product.category_id].id,
         newIngredientId: 0,
         newIngredientAmount: 0,
         newIngredientUnitId: 0,
@@ -82,6 +85,8 @@ export function getProductEditData(): ProductEditData {
         },
 
         get productCost(): string {
+            console.log(this.ingredient_usages_ext);
+            console.log(this.ingredients);
             return this.ingredient_usages_ext.reduce((cost, usage) => {
                 const ingredient = this.ingredients[usage.ingredient_id];
                 if (!ingredient?.prices || ingredient.prices.length === 0) return cost;

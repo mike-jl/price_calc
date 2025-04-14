@@ -9,7 +9,7 @@ export default [
     vitestGlobals(),
 
     {
-        files: ['scripts/**/*.ts'],
+        files: ['scripts/**/*.ts', 'tests/**/*.ts'],
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
@@ -32,6 +32,12 @@ export default [
             '@typescript-eslint/consistent-indexed-object-style': ['error', 'record'],
             '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
             '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+            '@typescript-eslint/consistent-type-assertions': 'error',
+            '@typescript-eslint/no-misused-promises': 'error',
+            '@typescript-eslint/no-unsafe-assignment': 'error',
+            '@typescript-eslint/no-unsafe-member-access': 'error',
+            '@typescript-eslint/no-unsafe-return': 'error',
         },
     },
 ];

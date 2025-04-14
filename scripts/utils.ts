@@ -6,7 +6,7 @@ export function createEditingHelpers<T extends EditableWithId>(
 ) {
     return {
         startEditing(item: T): void {
-            backup[item.id] = JSON.parse(JSON.stringify(item));
+            backup[item.id] = JSON.parse(JSON.stringify(item)) as T;
             item.editing = true;
         },
         cancelEditing(item: T): void {

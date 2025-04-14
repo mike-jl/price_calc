@@ -3,12 +3,7 @@ import '@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2';
 import '@fortawesome/fontawesome-free/webfonts/fa-solid-900.ttf';
 import '@fortawesome/fontawesome-free/css/all.css';
 
-import htmx from 'htmx.org';
-window.htmx = htmx;
-
 import Alpine from 'alpinejs';
-window.Alpine = Alpine;
-
 import { getProductEditData } from './product_edit';
 Alpine.data('productEditData', getProductEditData);
 
@@ -20,9 +15,9 @@ Alpine.start();
 document.addEventListener('DOMContentLoaded', () => {
     // Global htmx error handler
     document.body.addEventListener('htmx:beforeSwap', (evt: Event) => {
-        const detail = (evt as CustomEvent).detail;
+        const detail = (evt as CustomEvent<{ xhr: XMLHttpRequest; isError: boolean }>).detail;
         if (detail?.isError) {
-            alert(detail.xhr.response);
+            alert(detail.xhr.responseText);
         }
     });
 

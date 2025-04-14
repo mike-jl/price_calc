@@ -6,7 +6,8 @@
   "scripts": {
     "build": "vite build",
     "test": "vitest run",
-    "lint": "eslint scripts/ tests/ --ext .ts"
+    "lint": "eslint scripts/ tests/ --ext .ts",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",

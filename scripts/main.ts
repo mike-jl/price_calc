@@ -23,3 +23,30 @@ import { getIngredientsData } from './ingredients'
 Alpine.data('ingredientsData', getIngredientsData)
 
 Alpine.start()
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Global htmx error handler
+    document.body.addEventListener('htmx:beforeSwap', (evt: Event) => {
+        const detail = (evt as CustomEvent).detail;
+        if (detail?.isError) {
+            alert(detail.xhr.response);
+        }
+    });
+
+    // Bulma navbar burger toggling
+    const burgers = Array.from(document.querySelectorAll('.navbar-burger'));
+
+    for (const burger of burgers) {
+        burger.addEventListener('click', () => {
+            const targetId = (burger as HTMLElement).dataset.target;
+            if (!targetId) return;
+
+            const target = document.getElementById(targetId);
+            if (!target) return;
+
+            burger.classList.toggle('is-active');
+            target.classList.toggle('is-active');
+        });
+    }
+});
+

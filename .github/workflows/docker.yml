@@ -76,3 +76,5 @@ jobs:
                   build-contexts: |
                       binary-amd64=./context/amd64
                       binary-arm64=./context/arm64
+                  build-args: |
+                      TARGETARCH=amd64  # this gets overridden per platform by Buildx

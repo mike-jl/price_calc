@@ -1,20 +1,6 @@
-name: Build and Push Docker Image
-
-on:
-    push:
-        branches: [main]
-        tags: ['v*.*.*']
-
-permissions:
-    contents: read
-    packages: write
-
 jobs:
     docker:
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                arch: [amd64, arm64]
 
         env:
             GOOS: linux
@@ -27,15 +13,12 @@ jobs:
             - name: Generate Code
               uses: ./.github/actions/codegen
 
-            - name: Build Go binary
+            - name: Build Go binaries (amd64 + arm64)
               run: |
-                  mkdir -p dist/${{ matrix.arch }}
-                  GOARCH=${{ matrix.arch }} go build -o dist/${{ matrix.arch }}/main .
-
-            - name: Check binary
-              run: |
-                  ls -lh dist/${{ matrix.arch }}
-                  file dist/${{ matrix.arch }}/main || echo "Binary not found"
+                  for ARCH in amd64 arm64; do
+                    mkdir -p dist/$ARCH
+                    GOARCH=$ARCH CC=$CC go build -o dist/$ARCH/main .
+                  done
 
             - name: Set image tags
               id: vars
@@ -66,12 +49,12 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Build and push Docker image
+            - name: Build and push multi-arch Docker image
               uses: docker/build-push-action@v5
               with:
                   context: .
                   push: true
                   tags: ${{ steps.vars.outputs.tags }}
-                  platforms: linux/${{ matrix.arch }}
+                  platforms: linux/amd64,linux/arm64
                   build-args: |
-                      TARGETARCH=${{ matrix.arch }}
+                      TARGETARCH=amd64  # this gets overridden per platform by Buildx

@@ -76,5 +76,3 @@ jobs:
                   build-contexts: |
                       binary-amd64=./context/amd64
                       binary-arm64=./context/arm64
-                  build-args: |
-                      TARGETARCH

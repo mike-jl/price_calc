@@ -30,12 +30,17 @@ COPY --from=import-amd64 /main /tmp/main_amd64
 COPY --from=import-arm64 /main /tmp/main_arm64
 
 # Use shell command to pick the correct binary
-RUN case "$TARGETPLATFORM" in \
-        "linux/amd64") cp /tmp/main_amd64 ./main ;; \
-        "linux/arm64") cp /tmp/main_arm64 ./main ;; \
-        *) echo "Unsupported TARGETPLATFORM: $TARGETPLATFORM" && exit 1 ;; \
-    esac && \
-    chmod +x ./main
+# RUN case "$TARGETPLATFORM" in \
+#         "linux/amd64") cp /tmp/main_amd64 ./main ;; \
+#         "linux/arm64") cp /tmp/main_arm64 ./main ;; \
+#         *) echo "Unsupported TARGETPLATFORM: $TARGETPLATFORM" && exit 1 ;; \
+#     esac && \
+#     chmod +x ./main \
+#     rm -f /tmp/main_amd64 /tmp/main_arm64
+
+ARG TARGETARCH
+COPY --from=import-${TARGETARCH} /main ./main
+RUN chmod +x ./main
 
 RUN apk add --no-cache file
 RUN file ./main

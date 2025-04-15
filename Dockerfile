@@ -35,7 +35,7 @@ RUN case "$TARGETPLATFORM" in \
         "linux/arm64") cp /tmp/main_arm64 ./main ;; \
         *) echo "Unsupported TARGETPLATFORM: $TARGETPLATFORM" && exit 1 ;; \
     esac && \
-    chmod +x ./main \
+    chmod +x ./main && \
     rm -f /tmp/main_amd64 /tmp/main_arm64
 
 # RUN apk add --no-cache file

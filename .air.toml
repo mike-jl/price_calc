@@ -6,7 +6,7 @@ tmp_dir = "tmp"
   args_bin = []
   bin = "./tmp/main"
   # full_bin = "dlv exec ./tmp/main --headless --listen=:2345 --api-version=2 --accept-multiclient"
-  cmd = "npm run build && templ generate && sqlc generate && go build -gcflags=\"all=-N -l\" -o ./tmp/main ."
+  cmd = "npm run build && go tool templ generate && CGO_CFLAGS=\"-DHAVE_STRCHRNUL -mmacosx-version-min=15.4\" MACOSX_DEPLOYMENT_TARGET=\"15.4\" go tool sqlc generate && go build -gcflags=\"all=-N -l\" -o ./tmp/main ."
   # cmd = "templ generate && sqlc generate && go build -gcflags=\"all=-N -l\" -o ./tmp/main ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules"]

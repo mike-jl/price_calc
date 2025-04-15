@@ -48,8 +48,8 @@ templ ProductsTable(products []viewmodels.ProductWithCost, categories []db.Categ
 			for _, product := range products {
 				@ProductRow(product, categories)
 			}
+			<div id="product-table-end"></div>
 		</div>
-		<div id="product-table-end"></div>
 	</section>
 }
 

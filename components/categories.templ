@@ -10,7 +10,7 @@ templ Categories(categories []db.Category) {
 	<section class="section hero is-info custom block">
 		<div class="container">
 			<div class="hero-body p-0">
-				<form hx-put="/category" hx-swap="beforeend" hx-target=".section.product-row">
+				<form hx-put="/category" hx-swap="beforeend" hx-target=".container.product-row">
 					<div class="field">
 						<label class="label">New Category</label>
 						<div class="field has-addons">

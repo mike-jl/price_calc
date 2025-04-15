@@ -4,6 +4,7 @@ import '@fortawesome/fontawesome-free/webfonts/fa-solid-900.ttf';
 import '@fortawesome/fontawesome-free/css/all.css';
 
 import Alpine from 'alpinejs';
+window.Alpine = Alpine;
 import { getProductEditData } from './product_edit';
 Alpine.data('productEditData', getProductEditData);
 
@@ -11,6 +12,9 @@ import { getIngredientsData } from './ingredients';
 Alpine.data('ingredientsData', getIngredientsData);
 
 Alpine.start();
+
+import htmx from 'htmx.org';
+window.htmx = htmx;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Global htmx error handler

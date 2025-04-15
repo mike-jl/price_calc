@@ -20,9 +20,8 @@ RUN mkdir -p ./db
 
 # Copy statically linked Go binary (uses modernc.org/sqlite)
 ARG TARGETARCH
-ARG BINARYCTX=binary-${TARGETARCH}
 # Each arch gets its own context
-COPY --from=${BINARYCTX} /main ./main
+COPY --from=binary-${TARGETARCH} /main ./main
 RUN chmod +x ./main
 
 RUN apk add --no-cache file

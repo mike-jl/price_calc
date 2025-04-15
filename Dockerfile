@@ -22,11 +22,20 @@ WORKDIR /root
 # Create db dir (ignored by Git, needed at runtime)
 RUN mkdir -p ./db
 
+# Use ARG to select platform
 ARG TARGETPLATFORM
-# Copy the correct binary depending on TARGETPLATFORM
-# Use a conditional COPY — only one will be valid depending on the target platform
-COPY --from=import-amd64 /main ./main
-COPY --from=import-arm64 /main ./main
+
+# Set default to amd64 to avoid empty FROM in some cases
+COPY --from=import-amd64 /main /tmp/main_amd64
+COPY --from=import-arm64 /main /tmp/main_arm64
+
+# Use shell command to pick the correct binary
+RUN case "$TARGETPLATFORM" in \
+        "linux/amd64") cp /tmp/main_amd64 ./main ;; \
+        "linux/arm64") cp /tmp/main_arm64 ./main ;; \
+        *) echo "Unsupported TARGETPLATFORM: $TARGETPLATFORM" && exit 1 ;; \
+    esac && \
+    chmod +x ./main
 
 RUN apk add --no-cache file
 RUN file ./main

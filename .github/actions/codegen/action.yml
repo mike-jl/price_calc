@@ -22,6 +22,12 @@ runs:
         restore-keys: |
           ${{ runner.os }}-go-
 
+    - name: Set SQLCCACHE env var
+      run: |
+        export SQLCCACHE="$HOME/.cache/sqlc"
+        mkdir -p "$SQLCCACHE"
+        echo "SQLCCACHE=$SQLCCACHE" >> $GITHUB_ENV
+
     - uses: actions/cache@v3
       with:
         path: ~/.cache/sqlc

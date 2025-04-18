@@ -1,9 +1,8 @@
 import js from '@eslint/js';
 import * as tseslint from 'typescript-eslint';
 import globals from 'globals';
-import vitestGlobals from "eslint-config-vitest-globals/flat"
+import vitestGlobals from 'eslint-config-vitest-globals/flat';
 
-/** @type {import("eslint").Linter.FlatConfig[]} */
 export default [
     js.configs.recommended,
     vitestGlobals(),
@@ -27,10 +26,16 @@ export default [
         rules: {
             semi: ['error', 'always'],
             quotes: ['error', 'single'],
-            "no-unused-vars": "off",
-            "@typescript-eslint/no-unused-vars": ["error"],
-            '@typescript-eslint/consistent-indexed-object-style': ['error', 'record'],
-            '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+            'no-unused-vars': 'off',
+            '@typescript-eslint/no-unused-vars': ['error'],
+            '@typescript-eslint/consistent-indexed-object-style': [
+                'error',
+                'record',
+            ],
+            '@typescript-eslint/consistent-type-definitions': [
+                'error',
+                'interface',
+            ],
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/no-unnecessary-type-assertion': 'error',
             '@typescript-eslint/consistent-type-assertions': 'error',
@@ -41,4 +46,3 @@ export default [
         },
     },
 ];
-

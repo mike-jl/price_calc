@@ -22,8 +22,14 @@ runs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - run: go tool sqlc generate
+    - name: Pre-download Go modules
+      run: go mod download
       shell: bash
 
-    - run: go tool templ generate
+    - name: Generate sqlc
+      run: go tool sqlc generate
+      shell: bash
+
+    - name: Generate templ
+      run: go tool templ generate
       shell: bash

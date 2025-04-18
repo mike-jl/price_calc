@@ -27,7 +27,7 @@ runs:
       shell: bash
 
     - name: Generate sqlc
-      run: go tool sqlc generate
+      run: go tool sqlc generate -v
       shell: bash
 
     - name: Generate templ
